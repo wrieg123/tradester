@@ -100,12 +100,6 @@ class SecuritiesFactory(FeedGroup):
     check_all()
         checks for update of all active contract FuturesFeeds
 
-    See Also
-    --------
-    etl.feeds.active.FeedGroup
-    etl.feeds.active.FuturesFeed
-    etl.feeds.active.Stream
-    etl.feeds.static.FuturesTS
     """
 
     def __init__(self, identifiers = [], start_date = None, end_date = None, bar = 'daily', cache = None):

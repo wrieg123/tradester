@@ -1,3 +1,4 @@
+from tradester.feeds.factories import SecuritiesFactory, FuturesFactory
 from tradester.feeds.active import Feed
 
 from .portfolio import Portfolio
@@ -31,15 +32,96 @@ class Engine():
         self.metrics = Metrics(self.portfolio, trade_start_date = trade_start_date)
         self.strategy = None
 
+
     def set_universes(self, universes):
         self.universes = universes
-        for _, universe in list(self.universes.items()):
+        master_feed_range = []
+
+        for name, universe in list(self.universes.items()):
             universe.set_manager(self.manager)
+            
+            if self.bulk_load:
+                print('Bulk loading tradeable securities and futures')
+                if universe.id_type == 'FUT':
+                    self.feed_factories[name] = FuturesFactory(
+                               universe.continuations + list(universe.futures_meta.keys()),
+                               start_date = self.start_date,
+                               end_date = self.end_date,
+                               cache = self.cache
+                            )
+                elif universe.id_type == 'SEC':
+                    self.feed_factories[name] = SecuritiesFactory(
+                                universe.tickers,
+                                start_date = self.start_date,
+                                end_date = self.end_date,
+                                cache = self.cache
+                            )
+                self.feed_factories[name].set_streams(universe.streams)
+                master_feed_range +=  self.feed_factories[name].feed_range
 
         self.portfolio._connect(self.manager, self.universes)
         self.oms._connect(self.manager, self.universes)
 
-        if self.bulk_load:
-            print('Bulk loading contracts')
+        master_feed_range = list(set(master_feed_range))
+        master_feed_range.sort()
 
+        self.manager.set_calendar(master_feed_range)
+        self.manager.set_trading_calendar(master_feed_range)
 
+    def set_strategy(self, strategy):
+        self.strategy = strategy
+        self.strategy._connect(self.manager, self.oms, self.portfolio)
+        self.strategy.initialize()
+    
+    def run(self, plot = True, fast_forward = False):
+
+        print('Running backtest...')
+        print(f'Starting value: ${self.starting_cash:,.0f}')
+        cont = True
+        start = time.time()
+
+        if self.progress_bar:
+            pbar = tqdmr(total = len(self.manager.calendar), ascii = True)
+
+        while cont:
+            now = time.time()
+            self.manager.update()
+
+            if self.manager.now != 'END':
+                if self.print_trades:
+                    print()
+                    print('-----', self.manager.now, '-----')
+
+                    for _, factory in list(self.feed_factories.items()):
+                        factory.check_all()
+                    for name, universe in list(self.universes.items()):
+                        universe.refresh()
+                        if universe.id_type == 'FUT':
+                            self.feed_factories[name].set_streams(universe.streams,  remove = universe.inactive)
+                        else:
+                            self.feed_factories[name].set_streams(universe.streams)
+                    
+                    self.oms.process()
+                    self.portfolio.reconcile()
+
+                    self.strategy.refresh()
+
+                    if self.print_trades:
+                        print(f'Portfolio Value: ${self.portfolio.value:,.0f}')
+
+                    if not fast_forward:
+                        self.strategy.trade()
+                    if self.progress_bar:
+                        pbar.set_description(f"Portfolio Value: ${self.portfolio.value:,.0f}")
+
+            else:
+                cont = False
+            if self.progress_bar:
+                pbar.update(1)
+        if self.progress_bar:
+            pbar.close()
+        print('Total Time:', round((time.time() - start)/60, 2), 'minutes')
+
+        if plot:
+            self.metrics._print()
+            self.metrics.plot()
