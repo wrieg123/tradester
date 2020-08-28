@@ -1,4 +1,4 @@
-from tradester.feeds.static import FuturesTS, IndicatorsTS, SymbolsTS
+from tradester.feeds.static import FuturesTS, SymbolsTS
 
 from tradester.feeds.active import Price
 from tradester.feeds.active import Stream

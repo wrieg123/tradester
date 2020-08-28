@@ -1,5 +1,4 @@
-from tradester.feeds.factories import SecuritiesFactory, FuturesFactory
-from tradester.feeds.active import Feed
+from tradester.feeds.factories import SecuritiesFactory, FuturesFactory, Feed
 
 from .portfolio import Portfolio
 from .metrics import Metrics
@@ -13,7 +12,8 @@ import time
 
 class Engine():
 
-    def __init__(self, starting_cash = 10000000, start_date = None, end_date = None, bulk_load = True, cache = None, adv_participation = .2, adv_period = 21, adv_oi = 0.05, progress_bar = True, print_trades = False, trade_start_date = None):
+    def __init__(self, starting_cash = 10000000, start_date = None, end_date = None, bulk_load = True, cache = None, adv_participation = .2, adv_period = 21, adv_oi = 0.05, progress_bar = True, print_trades = False, trade_start_date = None, index = 'SPY'):
+        self.manager = Feed(None).manager
         self.starting_cash = starting_cash
         self.start_date = start_date
         self.end_date = end_date
@@ -28,8 +28,8 @@ class Engine():
         self.universes = {}
         self.feed_factories = {}
         self.portfolio = Portfolio(starting_cash, print_trades = print_trades)
-        self.oms = OMS(self.portfolio, adv_participation = adv_participation, adv_period = adv_period, adv_oi = adv_oi)
-        self.metrics = Metrics(self.portfolio, trade_start_date = trade_start_date)
+        self.oms = OMS(adv_participation = adv_participation, adv_period = adv_period, adv_oi = adv_oi)
+        self.metrics = Metrics(self.portfolio, trade_start_date, start_date, end_date, index = index)
         self.strategy = None
 
 
@@ -60,7 +60,7 @@ class Engine():
                 master_feed_range +=  self.feed_factories[name].feed_range
 
         self.portfolio._connect(self.manager, self.universes)
-        self.oms._connect(self.manager, self.universes)
+        self.oms._connect(self.manager, self.portfolio, self.universes)
 
         master_feed_range = list(set(master_feed_range))
         master_feed_range.sort()

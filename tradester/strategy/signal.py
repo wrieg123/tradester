@@ -52,7 +52,7 @@ class SignalGroup():
         return {k : np.column_stack(v) for k, v in list(temp_dict.items())}
    
     @property
-    def full_vector_space(self)
+    def full_vector_space(self):
         temp_dict = {}
         for s in self.group:
             g = s.grouping

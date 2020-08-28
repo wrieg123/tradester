@@ -34,7 +34,7 @@ class OMS():
         del self.order_book[contract]
         self.order_log.append(info)
     
-    def _fill_order(self, order, fill_price, filled_units, multiplier, fees)
+    def _fill_order(self, order, fill_price, filled_units, multiplier, fees):
         order.fill(self.manager.now, fill_price, fees, filled_units)
         self._remove_from_ob(order['identifier'])
         info = order.info
@@ -68,7 +68,7 @@ class OMS():
                         units - filled_units, 
                         info['universe'], 
                         time_in_force = info['time_in_force'],
-                        order_type = info['order_type']
+                        order_type = info['order_type'],
                         bands = info['bands']
                     )
 
@@ -106,7 +106,7 @@ class OMS():
                 side,
                 units,
                 self.manager.now, 
-                self.universes[universe][identifier].close.v
+                self.universes[universe][identifier].close.v,
                 bands = bands,
                 fok = fok,
             )

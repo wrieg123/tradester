@@ -1,17 +1,8 @@
 from etl.feeds.active import Stream
 from etl.utils import chunk_up
 
-from multiprocessing import Process, Pool
 
 import numpy as np
-
-try:
-    from hmmlearn import hmm
-except:
-    pass
-
-
-__all__ = ['Indicator', 'MarkovIndicator', 'IndicatorGroup']
 
 
 class Indicator():

@@ -1,13 +1,22 @@
+from tradester.feeds.static import SecuritiesTS
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import calendar
 
+
+#TODO: Add in index
+#TODO: How do I organize the charts? 2,2 subplots -> but what goes where?
+
+
 class Metrics():
     
-    def __init__(self, portfolio, trade_start_date):
+    def __init__(self, portfolio, trade_start_date, start_date, end_date, index = 'SPY'):
         self.portfolio = portfolio
         self.trade_start_date = trade_start_date
+        self.start_date = start_date
+        self.end_date = end_date
+        self.index_series = SecuritiesTS(index, fields='close', start_date = start_date, end_date = end_date).data
         self.holdings = None
         self.values = None
         self.statistics = None
@@ -24,7 +33,7 @@ class Metrics():
         self.values['gmv%'] = self.values['lmv%'] - self.values['smv%'] 
         self.values['cash%'] = self.values['cash']/self.values['value'] - 1
         self.values['%'] = self.values['value'].pct_change().fillna(0)
-        self.values['cumulative%'] = (1+self.values['%']).cumprod() - 1 
+        self.values['cumulative%'] = (1+self.values['%']).cumprod()
 
         stats = {}
         stats['Cumulative Return'] = (1+self.values['%']).prod() - 1

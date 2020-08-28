@@ -45,11 +45,11 @@ class Strategy():
             raise NotImplementedError("You must implement a self.get_trades() method, if you do not define your own trade method")
         trades = self.get_trades()
         positions = self.portfolio.positions
-        refs = [self.universes[futures].continuations_info[i]['reference_contract'] for i in list(self.scores.keys())]
-        for pos in list(positions.keys()):
-            if not pos in refs:
-                self.oms.place_order(-positions[pos]['side'], pos, positions[pos]['units'])
+
         for c, info in list(trades.items()):
+            id_type = info['id_type']
+            universe = info['universe']
             delta = info['delta']
+
             if delta != 0 and not c is None:
-                self.oms.place_order(1 if delta > 0 else -1, c, abs(delta))
+                self.oms.place_order(1 if delta > 0 else -1, c, id_type, c, abs(delta), universe)
