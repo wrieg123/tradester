@@ -102,7 +102,7 @@ class SecuritiesFactory(FeedGroup):
 
     """
 
-    def __init__(self, identifiers = [], start_date = None, end_date = None, bar = 'daily', cache = None):
+    def __init__(self, identifiers, start_date = None, end_date = None, bar = 'daily', cache = None):
         super().__init__(identifiers, start_date = start_date, end_date = end_date ,cache = cache)
         self.bar_type = bar
         self.not_tradeable = []
@@ -146,6 +146,7 @@ class SecuritiesFactory(FeedGroup):
                 df['contract'] = group[0]
             else:
                 df.columns = ['contract', 'field', 'date', 'value']
+
             for contract in group:
                 try:
                     self.group[contract] = SecuritiesFeed(contract, bar = self.bar_type, feed = df.loc[df.contract == contract].pivot_table(index = 'date', columns = 'field', values = 'value').to_dict(orient = 'index'), cache = self.cache)
@@ -160,7 +161,7 @@ class SecuritiesFactory(FeedGroup):
         for k, s in list(streams.items()):
             if k not in self.not_tradeable:
                 if k in list(self.group.keys()):
-                    self.active_group[k] = self.group.pop(k)
+                    self.active_group[k] = self.group[k]
                 self.active_group[k].set_stream(s)
                 if k in new_streams:
                     self.active_group[k].check()

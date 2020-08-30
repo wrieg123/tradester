@@ -14,7 +14,7 @@ class SecuritiesUniverse(Universe):
         self.bar = bar
         self.securities_meta_df = self.__get_meta(identifiers)
         self.securities_meta = self.securities_meta_df.set_index('ticker').to_dict(orient = 'index')
-        self._streams = {i: Price(bar, contract = i) for i in list(self._securities_meta.keys())}
+        self._streams = {i: Price(bar, contract = i) for i in list(self.securities_meta.keys())}
 
     @property
     def streams(self):

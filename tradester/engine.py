@@ -103,34 +103,33 @@ class Engine():
         while cont:
             now = time.time()
             self.manager.update()
-
             if self.manager.now != 'END':
                 if self.print_trades:
                     print()
                     print('-----', self.manager.now, '-----')
 
-                    for _, factory in list(self.feed_factories.items()):
-                        factory.check_all()
-                    for name, universe in list(self.universes.items()):
-                        universe.refresh()
-                        if universe.id_type == 'FUT':
-                            self.feed_factories[name].set_streams(universe.streams,  remove = universe.inactive)
-                        else:
-                            self.feed_factories[name].set_streams(universe.streams)
-                    
-                    self.oms.process()
-                    self.portfolio.reconcile()
+                for _, factory in list(self.feed_factories.items()):
+                    factory.check_all()
+                for name, universe in list(self.universes.items()):
+                    universe.refresh()
+                    if universe.id_type == 'FUT':
+                        self.feed_factories[name].set_streams(universe.streams,  remove = universe.inactive)
+                    else:
+                        self.feed_factories[name].set_streams(universe.streams)
+                
+                self.oms.process()
+                self.portfolio.reconcile()
 
-                    self.strategy._refresh()
+                self.strategy._refresh()
 
-                    if self.print_trades:
-                        print(f'Portfolio Value: ${self.portfolio.value:,.0f}')
+                if self.print_trades:
+                    print(f'Portfolio Value: ${self.portfolio.value:,.0f}')
 
-                    if not fast_forward:
-                        self.strategy.trade()
-                    if self.progress_bar:
-                        pbar.set_description(f"Portfolio Value: ${self.portfolio.value:,.0f}")
+                if not fast_forward:
+                    self.strategy.trade()
 
+                if self.progress_bar:
+                    pbar.set_description(f"Portfolio Value: ${self.portfolio.value:,.0f}")
             else:
                 cont = False
             if self.progress_bar:

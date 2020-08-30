@@ -69,7 +69,7 @@ class Metrics():
         self.values['Incentive'] = self.values['CumulativeIncentive'] - self.values['PriorIncentive']
         self.values['NetIncome'] = self.values['GrossIncome'] - self.values['Management'] - self.values['Incentive']
         self.values['returns_net'] = (self.values['NetIncome'] / self.values['BeginningCapital']).fillna(0)
-        self.values['returns_net_cum'] = (1+self.values['returns_net']).cumprod()
+        self.values['returns_net_cum'] = (1+self.values['returns_net']).cumprod().fillna(1)
 
 
     def _calculate(self):
@@ -81,6 +81,9 @@ class Metrics():
             self.holdings = self.holdings.loc[self.holdings.date >= self.trade_start_date]
             self.values = self.values.loc[self.values.index >= self.trade_start_date]
             self.trading_log = self.trading_log.loc[self.trading_log.date >= self.trade_start_date]
+            self.index_series = self.index_series.loc[self.index_series.index >= pd.to_datetime(self.trade_start_date)]
+        self.index_series['%'] = self.index_series['close'].pct_change()
+        self.values['index_returns'] = (1+self.index_series['%']).cumprod().fillna(1)
 
         self.values['expanding_max'] = self.values['value'].expanding().max()
         self.values['dd'] = (self.values['value'] / self.values['expanding_max'] - 1).apply(lambda x: 0 if x > 0 else x)
@@ -90,7 +93,7 @@ class Metrics():
         self.values['gmv%'] = self.values['lmv%'] - self.values['smv%'] 
         self.values['cash%'] = self.values['cash']/self.values['value'] - 1
         self.values['%'] = self.values['value'].pct_change().fillna(0)
-        self.values['cumulative'] = (1+self.values['%']).cumprod()
+        self.values['cumulative'] = (1+self.values['%']).cumprod().fillna(1)
         self.values['date'] = self.values.index
         self.values['date'] = self.values['date'].apply(lambda x: x.strftime('%Y-%m-%d'))
         self.values['year-month'] = self.values['date'].apply(lambda x: pd.to_datetime(f'{x.split("-")[0]}' +'-'+ f'{x.split("-")[1]}'+'-01'))
@@ -235,7 +238,9 @@ class Metrics():
         #axs[1].set_title('Distribution of Trade Returns (%)')
         #axs[1].set_xlim(xmin= -0.015, xmax=0.015)
         #axs[2].set_title('Portfolio Positioning')
-        self.values['returns_net_cum'].plot(color = 'black', secondary_y = True)
+        self.values['cumulative'].plot(color = 'blue', secondary_y = True)
+        self.values['returns_net_cum'].plot(color = 'navy', secondary_y = True)
+        self.values['index_returns'].plot(color = 'grey',secondary_y = True) 
         self.values['dd'].plot.area(stacked=False, color = 'red', alpha = 0.5)
         #self.trading_log.loc[self.trading_log['pnl%'] > 0, 'pnl%'].hist(ax = axs[1], color = 'green', bins = 100)
         #self.trading_log.loc[self.trading_log['pnl%'] < 0, 'pnl%'].hist(ax = axs[1], color = 'red', bins = 100)
@@ -245,5 +250,6 @@ class Metrics():
         #self.values['smv%'].plot(color = 'red', ax = axs[2])
         #self.values['gmv%'].plot(color = 'black', ax = axs[2])
         #self.values['nmv%'].plot.area(stacked=False, color = 'blue', alpha = .75, ax = axs[2])
-        #axs[2].legend() 
+        #axs[2].legend()
+        plt.legend()
         plt.show() 
