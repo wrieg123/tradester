@@ -5,7 +5,8 @@ ATTRIBUTES = {
         'minute': ['open','high','low','close','volume','open_interest'],
         'hourly': ['open','high','low','close','volume','open_interest'],
         'daily': ['open','high','low','close','volume','open_interest'],
-        'tick': ['b','a', 'bq', 'aq']}
+        'tick': ['b','a', 'bq', 'aq']
+        }
 
 class Price(Stream):
     """
@@ -52,6 +53,7 @@ class Price(Stream):
         super().__init__(cache)
         self.contract = contract
         self.bar_type = bar_type
+        self.multiplier = multiplier
         self.attributes = ATTRIBUTES[bar_type]
         for a in ATTRIBUTES[bar_type]:
             setattr(self, a, Stream(cache))
@@ -64,11 +66,11 @@ class Price(Stream):
     
     @property
     def market_value(self):
-        if self.bar != 'tick':
+        if self.bar_type != 'tick':
             if self.close.v is None:
                 return None
             else:
-                return self.close.v * multiplier
+                return self.close.v * self.multiplier
 
 
     @property

@@ -20,11 +20,9 @@ class Signal():
 class SignalGroup():
 
 
-
     def __init__(self):
         self.group = []
   
-
 
     @property
     def vector_space(self):

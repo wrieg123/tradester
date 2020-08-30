@@ -7,14 +7,14 @@ class Position():
         self.id_type = id_type
         self.identifier = identifier
         self.multiplier = multiplier
-        self.side = self.side
+        self.side = side
         self.units = units
         self.cost_basis = cost_basis
         self.universe = universe
     
     @property
     def market_value(self):
-        return self.units * self.stream.market_value.v * self.side
+        return self.units * self.stream.market_value * self.side
 
     @property
     def pnl(self):

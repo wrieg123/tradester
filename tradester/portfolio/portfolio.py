@@ -81,7 +81,7 @@ class Portfolio():
 
         if not identifier in self.positions.keys():
             self._positions[identifier] = Position(
-                                            self.universes[universe][identifier],
+                                            self.universes[universe].streams[identifier],
                                             id_type,
                                             identifier, 
                                             multiplier,
@@ -113,7 +113,7 @@ class Portfolio():
             if pos_delta != 0:
                 side = 1 if pos_delta > 0 else -1
                 self._positions[identifier] = Position(
-                                                self.universes[universe][identifier],
+                                                self.universes[universe].streams[identifier],
                                                 id_type,
                                                 identifier, 
                                                 multiplier,
@@ -131,7 +131,7 @@ class Portfolio():
 
         if not identifier in self.positions.keys():
             self._positions[identifier] = Position(
-                                            self.universes[universe][identifier],
+                                            self.universes[universe].streams[identifier],
                                             id_type,
                                             identifier, 
                                             multiplier,
@@ -143,7 +143,7 @@ class Portfolio():
 
         else:
             current = self._positions.pop(identifier).info
-            pos_delta = (current['side']*current['units']) + units
+            pos_delta = (current['side']*current['units']) - units 
             cb_delta = current['cost_basis'] + cost_basis
             
             if current['side'] == 1:
@@ -163,7 +163,7 @@ class Portfolio():
             if pos_delta != 0:
                 side = 1 if pos_delta > 0 else -1
                 self._positions[identifier] = Position(
-                                                self.universes[universe][identifier],
+                                                self.universes[universe].streams[identifier],
                                                 id_type,
                                                 identifier, 
                                                 multiplier,
@@ -182,14 +182,14 @@ class Portfolio():
 
         for identifier, position in list(self.positions.items()):
             position['date'] = self.manager.now_date,
+            info = position
             self.holdings.append(info)
 
             pnl += position['pnl']
             id_type = position['id_type']
-            identifier = position['identfier']
             universe = position['universe']
 
-            if id_type == 'FUT' and identifier in self.universes[identifier].inactive:
+            if id_type == 'FUT' and identifier in self.universes[universe].inactive:
                 if self.print_trades:
                     print('SETTLE', identifier, round(position['market_value']))
                 del self._positions[identifier]

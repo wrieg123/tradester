@@ -6,6 +6,7 @@ class Order():
         self.status = 'PLACED'
         self.num = num
         self.order_type = order_type
+        self.universe = universe
         self.id_type = id_type
         self.identifier = identifier
         self.side = side
@@ -17,10 +18,10 @@ class Order():
         self.fok = fok
         self.fill_price = None
         self.fill_date = None
+        self.fill_units = 0
         self.cancel_date = None
         self.update_date = None
         self.days_on = 0
-        self.filled_shares = 0
     
     @property
     def info(self):
@@ -28,7 +29,7 @@ class Order():
             'status': self.status,
             'num': self.num,
             'order_type': self.order_type,
-            'universe': universe,
+            'universe': self.universe,
             'id_type': self.id_type,
             'identifier': self.identifier,
             'side': self.side,
@@ -62,4 +63,4 @@ class Order():
         self.status = 'FILLED' if partial == self.units else 'PARTIAL'
         self.fill_date = date
         self.fill_price = price
-        self.filled_shares = partial
+        self.fill_units = partial

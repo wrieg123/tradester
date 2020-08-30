@@ -12,9 +12,27 @@ import time
 
 class Engine():
 
-    def __init__(self, starting_cash = 10000000, start_date = None, end_date = None, bulk_load = True, cache = None, adv_participation = .2, adv_period = 21, adv_oi = 0.05, progress_bar = True, print_trades = False, trade_start_date = None, index = 'SPY'):
+    def __init__(
+            self, 
+            starting_cash = 10000000, 
+            management_fee = 0.01,
+            performance_fee = 0.3,
+            start_date = None, 
+            end_date = None, 
+            bulk_load = True, 
+            cache = None, 
+            adv_participation = .2, 
+            adv_period = 21, 
+            adv_oi = 0.05, 
+            progress_bar = True, 
+            print_trades = False, 
+            trade_start_date = None, 
+            index = 'SPY'
+            ):
         self.manager = Feed(None).manager
         self.starting_cash = starting_cash
+        self.management_fee = management_fee
+        self.performance_fee = performance_fee
         self.start_date = start_date
         self.end_date = end_date
         self.bulk_load = bulk_load
@@ -29,7 +47,7 @@ class Engine():
         self.feed_factories = {}
         self.portfolio = Portfolio(starting_cash, print_trades = print_trades)
         self.oms = OMS(adv_participation = adv_participation, adv_period = adv_period, adv_oi = adv_oi)
-        self.metrics = Metrics(self.portfolio, trade_start_date, start_date, end_date, index = index)
+        self.metrics = Metrics(self.portfolio, trade_start_date, start_date, end_date, management_fee, performance_fee, index = index)
         self.strategy = None
 
 
@@ -64,7 +82,6 @@ class Engine():
 
         master_feed_range = list(set(master_feed_range))
         master_feed_range.sort()
-
         self.manager.set_calendar(master_feed_range)
         self.manager.set_trading_calendar(master_feed_range)
 
@@ -104,7 +121,7 @@ class Engine():
                     self.oms.process()
                     self.portfolio.reconcile()
 
-                    self.strategy.refresh()
+                    self.strategy._refresh()
 
                     if self.print_trades:
                         print(f'Portfolio Value: ${self.portfolio.value:,.0f}')
@@ -121,6 +138,8 @@ class Engine():
         if self.progress_bar:
             pbar.close()
         print('Total Time:', round((time.time() - start)/60, 2), 'minutes')
+
+        self.metrics._calculate()
 
         if plot:
             self.metrics._print()

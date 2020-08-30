@@ -1,14 +1,10 @@
-from etl.feeds.static import CustomFeed
-from etl.utils import contract_months, contract_months_l
+from tradester.feeds.static import CustomFeed
 
 from dateutil.relativedelta import relativedelta as timedelta
-
-from .futures import Future
 
 import pandas as pd
 import math
 
-__all__ = ['FuturesUniverse']
 
 class Universe():
     """

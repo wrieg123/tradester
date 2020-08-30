@@ -1,6 +1,8 @@
 from tradester.feeds.active import Price
 from tradester.feeds.static import CustomFeed
 
+from dateutil.relativedelta import relativedelta as timedelta
+
 from .universe import Universe
 
 import pandas as pd
@@ -73,7 +75,7 @@ class FuturesUniverse(Universe):
         self.futures_meta_df = self.__get_meta()
         self.futures_meta = self.futures_meta_df.set_index('contract').to_dict(orient='index')
         self.products_meta = CustomFeed(f'select * from products where product in ({str(products).strip("[]")})').data.set_index('product').to_dict(orient='index')
-        self._continuations = CustomFeed(f"select contract, daily_start_date, daily_end_date, name, product, tick_start_date, tick_end_date, continuation from futures where product in ({str(products).strip('[]')}) and continuation between {continuation_periods[0]} and {continuation_periods[1]} order by product, continuation asc").data.set_index('contract').to_dict(orient='index') 
+        self._continuations = CustomFeed(f"select * from futures where product in ({str(products).strip('[]')}) and continuation between {continuation_periods[0]} and {continuation_periods[1]} order by product, continuation asc").data.set_index('contract').to_dict(orient='index') 
         self.mb = None
         self._inactive = {}
         self._streams = {i : Price(bar, contract = i, multiplier = self._continuations[i]['multiplier']) for i in list(self._continuations.keys())}
@@ -144,7 +146,7 @@ class FuturesUniverse(Universe):
         max_me = (pd.to_datetime(reference_date) + timedelta(months = back-1) + pd.offsets.MonthEnd(0)).strftime('%Y-%m-%d')
         list_prods = []
         for product in self.products:
-            temp = self.futures_meta_df.loc[(self.futures_meta_df.settlement_date > reference_date) & (self.futures_meta_df.first_trade_date <= reference_date)  & (self.futures_meta_df['product'] == product)].sort_values(['product','soft_expiry'])
+            temp = self.futures_meta_df.loc[(self.futures_meta_df.last_trade_date > reference_date) & (self.futures_meta_df.first_trade_date <= reference_date)  & (self.futures_meta_df['product'] == product)].sort_values(['product','soft_expiry'])
             temp['continuation'] = temp.groupby('product').cumcount() + 1
             temp = temp.loc[temp.continuation.between(front,back)]
             temp['clearing'] = temp['product'].apply(lambda x: self.products_meta[x]['clearing'])

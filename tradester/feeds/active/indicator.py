@@ -1,5 +1,4 @@
-from etl.feeds.active import Stream
-from etl.utils import chunk_up
+from .stream import Stream
 
 
 import numpy as np
@@ -172,7 +171,7 @@ class IndicatorGroup():
         elif isinstance(self.group, dict):
             self.group[name] = indicator
     
-    def refresh_all(self):
+    def refresh(self):
         if isinstance(self.group, list):
             for i in self.group:
                 i.refresh()

@@ -1,6 +1,6 @@
 from tradester.feeds.active import IndicatorGroup, Stream
 
-from .signal import Signal
+from .signal import Signal, SignalGroup
 
 
 
@@ -24,13 +24,13 @@ class Strategy():
         self.portfolio = portfolio
     
     def _refresh(self):
-        for i in list(self.top_down.items()):
+        for i in list(self.top_down.values()):
             i.refresh()
         self.bottom_up.refresh()
 
     def add(self, indicator, identifiers, base = 'bottom_up', group = None, name = None):
         if base == 'bottom_up':
-            self.bottom_up.add(Signal(indicator, identifiers, grouping = group))
+            self.bottom_up._add(Signal(indicator, identifiers, grouping = group))
         elif base == 'top_down':
             self.top_down.add(indicator, name = name)
 
@@ -52,4 +52,4 @@ class Strategy():
             delta = info['delta']
 
             if delta != 0 and not c is None:
-                self.oms.place_order(1 if delta > 0 else -1, c, id_type, c, abs(delta), universe)
+                self.oms.place_order(1 if delta > 0 else -1, id_type, c, abs(delta), universe)
