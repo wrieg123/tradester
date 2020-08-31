@@ -62,7 +62,7 @@ class Metrics():
                     cum_forward = end_forward
                 self.values.loc[self.values.index == date, 'EndCumulative'] = cum_forward + income
             prev_date = date
-        self.values['CumulativeIncentive'] = self.values['EndCumulative'].apply(lambda x: 0 if x <= 0 else x * self.performance_fee)
+        self.values['CumulativeIncentive'] = self.values['EndCumulative'].apply(lambda x: 0 if x <= 0 else x * ((1+self.performance_fee)**(1/252)- 1))
         self.values['PriorIncentive'] = self.values['CumulativeIncentive'].shift(1).fillna(0)
         self.values.loc[self.values.index.isin(yf_list), 'PriorIncentive'] = 0
         self.values.fillna(0, inplace = True)
