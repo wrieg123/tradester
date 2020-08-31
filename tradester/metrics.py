@@ -82,8 +82,9 @@ class Metrics():
             self.values = self.values.loc[self.values.index >= self.trade_start_date]
             self.trading_log = self.trading_log.loc[self.trading_log.date >= self.trade_start_date]
             self.index_series = self.index_series.loc[self.index_series.index >= pd.to_datetime(self.trade_start_date)]
-        self.index_series['%'] = self.index_series['close'].pct_change()
-        self.values['index_returns'] = (1+self.index_series['%']).cumprod().fillna(1)
+        self.index_series['%'] = self.index_series['close'].pct_change().fillna(method='ffill')
+        self.values['index_returns'] = (1+self.index_series['%']).cumprod()
+        self.values['index_returns'] = self.values['index_returns'].fillna(method='ffill').fillna(1)
 
         self.values['expanding_max'] = self.values['value'].expanding().max()
         self.values['dd'] = (self.values['value'] / self.values['expanding_max'] - 1).apply(lambda x: 0 if x > 0 else x)

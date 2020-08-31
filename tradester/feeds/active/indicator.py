@@ -53,7 +53,7 @@ class Indicator():
 
     See Also
     --------
-    etl.feeds.active.Stream
+    tradester.feeds.active.Stream
     """
 
     def __init__(self, data, cache, attributes = ['_indicator']):
