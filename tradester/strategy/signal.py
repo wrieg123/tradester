@@ -11,7 +11,6 @@ class Signal():
         self.grouping = grouping
    
 
-
     def refresh(self):
         self.indicator.refresh()
 
@@ -53,20 +52,23 @@ class SignalGroup():
     def full_vector_space(self):
         temp_dict = {}
         for s in self.group:
-            g = s.grouping
+            g = s.grouping if s.grouping is not None else 'None'
             name = s.indicator_name
             ts = s.indicator.ts
+
             for c in s.identifiers:
-                if not c in temp_dict.keys():
+
+                if c not in temp_dict.keys():
                     temp_dict[c] = {}
-                if not g in temp_dict[c].keys():
+                if g not in temp_dict[c].keys():
                     temp_dict[c][g] = {}
+
                 if isinstance(ts, list):
                     temp_dict[c][g][name] = np.column_stack([t for t in ts])
                 elif isinstance(ts, dict):
                     temp_dict[c][g][name] = np.column_stack([t for t in list(ts.values())])
                 else:
-                    temp_dict[c][name] = np.column_stack([ts])
+                    temp_dict[c][g][name] = np.column_stack([ts])
 
         return temp_dict
 

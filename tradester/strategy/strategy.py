@@ -32,7 +32,7 @@ class Strategy():
         if base == 'bottom_up':
             self.bottom_up._add(Signal(indicator, identifiers, grouping = group))
         elif base == 'top_down':
-            self.top_down.add(indicator, name = name)
+            self.top_down[group].add(indicator, name = name)
 
 
     def initialize(self):
