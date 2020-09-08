@@ -66,16 +66,17 @@ class FuturesUniverse(Universe):
     etl.feeds.static.CustomFeed
     """
 
-    def __init__(self, products, continuation_periods = (1, 12), start_date = None, end_date = None, bar = 'daily', exchange = 'CME'):
+    def __init__(self, products, continuation_periods = (1, 12), start_date = None, end_date = None, bar = 'daily', exchange = 'CME', use_synthetics = False):
         super().__init__('FUT', start_date, end_date)
         self.products = products
         self.bar = bar
         self.exchange = exchange
         self.continuation_periods = continuation_periods 
         self.futures_meta_df = self.__get_meta()
+        self.use_synthetics = use_synthetics
         self.futures_meta = self.futures_meta_df.set_index('contract').to_dict(orient='index')
         self.products_meta = CustomFeed(f'select * from products where product in ({str(products).strip("[]")})').data.set_index('product').to_dict(orient='index')
-        self._continuations = CustomFeed(f"select * from futures where product in ({str(products).strip('[]')}) and continuation between {continuation_periods[0]} and {continuation_periods[1]} order by product, continuation asc").data.set_index('contract').to_dict(orient='index') 
+        self._continuations = CustomFeed(f"select * from futures where product in ({str(products).strip('[]')}) and is_synthetic = {self.use_synthetics} and continuation between {continuation_periods[0]} and {continuation_periods[1]} order by product, continuation asc").data.set_index('contract').to_dict(orient='index') 
         self.mb = None
         self._inactive = {}
         self._streams = {i : Price(bar, contract = i, multiplier = self._continuations[i]['multiplier']) for i in list(self._continuations.keys())}

@@ -16,6 +16,7 @@ class Strategy():
                 'L': IndicatorGroup(group_type = 'dict'),
                 'R': IndicatorGroup(group_type = 'dict')
                 }
+        self.covariance_map = { }
         self.bottom_up = SignalGroup()
         
     def _connect(self, manager, oms, portfolio):
@@ -26,6 +27,8 @@ class Strategy():
     def _refresh(self):
         for i in list(self.top_down.values()):
             i.refresh()
+        for i in list(self.covariance_map.values()):
+            i.refresh()
         self.bottom_up.refresh()
 
     def add(self, indicator, identifiers, base = 'bottom_up', group = None, name = None):
@@ -33,6 +36,10 @@ class Strategy():
             self.bottom_up._add(Signal(indicator, identifiers, grouping = group))
         elif base == 'top_down':
             self.top_down[group].add(indicator, name = name)
+        elif base == 'covariance':
+            if not name in self.covariance_map.keys():
+                self.covariance_map[name] = SignalGroup()
+            self.covariance_map[name]._add(Signal(indicator, identifiers, grouping = group))
 
 
     def initialize(self):

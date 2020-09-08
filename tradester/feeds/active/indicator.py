@@ -1,4 +1,4 @@
-from .stream import Stream
+from tradester.feeds.active.stream import Stream
 
 
 import numpy as np
@@ -87,7 +87,6 @@ class Indicator():
     @property
     def differential(self):
         if isinstance(self.data, Stream):
-            #return self.data.pointer - getattr(self, self.attributes[0]).pointer 
             return self.data.pointer - self.pointer
         elif isinstance(self.data, list):
             return min([d.pointer for d in self.data]) - self.pointer
