@@ -4,9 +4,9 @@ class Signal():
 
 
 
-    def __init__(self, indicator, identifiers, grouping = None):
+    def __init__(self, indicator, identifiers, grouping = None, name = None):
         self.indicator = indicator
-        self.indicator_name = self.indicator.__class__.__name__
+        self.indicator_name = self.indicator.__class__.__name__ if name is None else name
         self.identifiers = identifiers if isinstance(identifiers, list) else [identifiers]
         self.grouping = grouping
    

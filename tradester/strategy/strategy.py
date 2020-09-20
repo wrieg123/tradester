@@ -12,9 +12,9 @@ class Strategy():
         self.oms = None
         self.portfolio = None
         self.top_down = {
-                'G': IndicatorGroup(group_type = 'dict'),
-                'L': IndicatorGroup(group_type = 'dict'),
-                'R': IndicatorGroup(group_type = 'dict')
+                'E': IndicatorGroup(group_type = 'dict'),
+                'B': IndicatorGroup(group_type = 'dict'),
+                'U': IndicatorGroup(group_type = 'dict')
                 }
         self.covariance_map = { }
         self.bottom_up = SignalGroup()
@@ -33,7 +33,7 @@ class Strategy():
 
     def add(self, indicator, identifiers, base = 'bottom_up', group = None, name = None):
         if base == 'bottom_up':
-            self.bottom_up._add(Signal(indicator, identifiers, grouping = group))
+            self.bottom_up._add(Signal(indicator, identifiers, grouping = group, name = name))
         elif base == 'top_down':
             self.top_down[group].add(indicator, name = name)
         elif base == 'covariance':

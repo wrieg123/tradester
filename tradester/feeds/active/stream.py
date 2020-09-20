@@ -115,9 +115,11 @@ class Stream():
             pass
 
     def push(self, x):
-        if isinstance(x, (int, float)) and str(x) != 'nan':
+        if str(x) != 'nan' or not x is None:
             self._stream.append(x)
             self._pointer += 1
             self._check_cache()
+        else:
+            raise ValueError('The input type is not in (int, float)')
         
 

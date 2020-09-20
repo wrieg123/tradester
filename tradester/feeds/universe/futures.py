@@ -61,9 +61,9 @@ class FuturesUniverse(Universe):
     
     See Also
     --------
-    etl.feeds.active.FeedManager
-    etl.feeds.active.Stream
-    etl.feeds.static.CustomFeed
+    tradester.feeds.active.FeedManager
+    tradester.feeds.active.Stream
+    tradester.feeds.static.CustomFeed
     """
 
     def __init__(self, products, continuation_periods = (1, 12), start_date = None, end_date = None, bar = 'daily', exchange = 'CME', use_synthetics = False):
@@ -135,6 +135,12 @@ class FuturesUniverse(Universe):
     @property
     def active_info(self):
         return self._active
+    
+    def contract_factory(self, x):
+        contract = f"^{x['clearing']}{x['continuation']}"
+        if self.use_synthetics:
+            contract += '-S'
+        return contract
 
     def refresh(self, reference_date = None):
         if reference_date is None:  
@@ -147,12 +153,12 @@ class FuturesUniverse(Universe):
         max_me = (pd.to_datetime(reference_date) + timedelta(months = back-1) + pd.offsets.MonthEnd(0)).strftime('%Y-%m-%d')
         list_prods = []
         for product in self.products:
-            temp = self.futures_meta_df.loc[(self.futures_meta_df.last_trade_date > reference_date) & (self.futures_meta_df.first_trade_date <= reference_date)  & (self.futures_meta_df['product'] == product)].sort_values(['product','soft_expiry'])
+            temp = self.futures_meta_df.loc[(self.futures_meta_df.last_trade_date >= reference_date) & (self.futures_meta_df.first_trade_date <= reference_date)  & (self.futures_meta_df['product'] == product)].sort_values(['product','soft_expiry'])
             temp['continuation'] = temp.groupby('product').cumcount() + 1
             temp = temp.loc[temp.continuation.between(front,back)]
             temp['clearing'] = temp['product'].apply(lambda x: self.products_meta[x]['clearing'])
             temp['multiplier'] = temp['product'].apply(lambda x: self.products_meta[x]['multiplier'])
-            temp['reference_contract'] = temp.apply(lambda x: f"^{x['clearing']}{x['continuation']}", axis = 1)
+            temp['reference_contract'] = temp.apply(lambda x: self.contract_factory(x), axis = 1)
             list_prods+=temp.head(back).to_dict(orient='records')
 
         df = pd.DataFrame(list_prods)
@@ -183,6 +189,5 @@ class FuturesUniverse(Universe):
                 print('No data', contract) 
             else:
                 if not contract in self.active:
-                    #print('Adding', contract)
                     self._active[contract] = new[contract]
                     self._streams[contract] = Price(self.bar, contract = contract, multiplier = self.futures_meta[contract]['multiplier'])
