@@ -7,7 +7,7 @@ def create_credentials():
 
     while run:
         print("Beginning creation of new credential ... ")
-        server_type = input("database type (currently accepted: mysql or postgres): ")
+        server_type = input("database type (currently accepted: mysql, postgres, mssql+pyodbc): ")
         user = input("username: ")
         pwd = input("password: ")
         host = input("ip addr: ")

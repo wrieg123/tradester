@@ -153,7 +153,7 @@ class FuturesUniverse(Universe):
         max_me = (pd.to_datetime(reference_date) + timedelta(months = back-1) + pd.offsets.MonthEnd(0)).strftime('%Y-%m-%d')
         list_prods = []
         for product in self.products:
-            temp = self.futures_meta_df.loc[(self.futures_meta_df.last_trade_date >= reference_date) & (self.futures_meta_df.first_trade_date <= reference_date)  & (self.futures_meta_df['product'] == product)].sort_values(['product','soft_expiry'])
+            temp = self.futures_meta_df.loc[(self.futures_meta_df.last_trade_date > reference_date) & (self.futures_meta_df.first_trade_date <= reference_date)  & (self.futures_meta_df['product'] == product)].sort_values(['product','soft_expiry'])
             temp['continuation'] = temp.groupby('product').cumcount() + 1
             temp = temp.loc[temp.continuation.between(front,back)]
             temp['clearing'] = temp['product'].apply(lambda x: self.products_meta[x]['clearing'])

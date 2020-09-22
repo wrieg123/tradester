@@ -3,6 +3,7 @@ import json
 import sqlalchemy
 import psycopg2
 import mysql.connector as mysql
+import pyodbc
 
 
 class connector():
@@ -39,9 +40,16 @@ class connector():
             return psycopg2.connect(**{x:v for x, v in self.credentials.items() if x != 's_type'})
         elif self.credentials['s_type'] == 'mysql':
             return mysql.connect(**{x:v for x, v in self.credentials.items() if x != 's_type'})
+        elif self.credentials['s_type'] == 'mssql+pyodbc':
+            return pyodbc.connect(f"DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={self.credentials['host']};DATABASE={self.credentials['database']};UID={self.credentials['user']};PWD={self.credentials['password']}")
 
     def engine(self):
         """
         return sqlalchemy engine object using the connection parameters 
         """
-        return sqlalchemy.create_engine(f"{self.s_type}://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}")
+        if self.credentials['s_type'] == 'mssql+pyodbc':
+            import urllib
+            params = urllib.parse.quote_plus(f"DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={self.credentials['host']};DATABASE={self.credentials['database']};UID={self.credentials['user']};PWD={self.credentials['password']}")
+            return sqlalchemy.create_engine("mssql+pyodbc:///?odbc_connect=%s" % params)
+        else:
+            return sqlalchemy.create_engine(f"{self.s_type}://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}")
