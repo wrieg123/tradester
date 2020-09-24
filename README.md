@@ -6,7 +6,6 @@ Tradester is a python-based backtesting framework to test trading strategies usi
 
 ```
 py setup.py install
-
 ```
 
 ## Running a Strategy (SMA Strategy)
