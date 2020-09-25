@@ -44,6 +44,7 @@ class SymbolsTS(TSFeed):
         self._data = self.__gather_data()
 
     def __gather_data(self):
+        self.complete_fields = "{}, symbol, {}".format(self.date_fields, self.fields)
         if self.identifiers_type is list:
             query = "select {}, symbol, {} from {} where symbol in ({})".format(self.date_fields, self.fields, self.database, str(self.identifiers).strip('[]'))
         else:

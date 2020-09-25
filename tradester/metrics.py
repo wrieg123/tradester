@@ -100,11 +100,11 @@ class Metrics():
         self.values['year-month'] = self.values['date'].apply(lambda x: pd.to_datetime(f'{x.split("-")[0]}' +'-'+ f'{x.split("-")[1]}'+'-01'))
         self.values['year'] = self.values['date'].apply(lambda x: pd.to_datetime(f'{x.split("-")[0]}'+'-01-01'))
 
-        self._calculate_fees()
+        #self._calculate_fees()
         self.monthly_returns, self.yearly_returns = self.__group_returns()
 
-        self.values['expanding_max_dd'] = self.values['returns_net_cum'].expanding().max()
-        self.values['dd_net'] = (self.values['returns_net_cum'] / self.values['expanding_max_dd'] - 1).apply(lambda x: 0 if x > 0 else x)
+        #self.values['expanding_max_dd'] = self.values['returns_net_cum'].expanding().max()
+        #self.values['dd_net'] = (self.values['returns_net_cum'] / self.values['expanding_max_dd'] - 1).apply(lambda x: 0 if x > 0 else x)
 
         stats = {
             'portfolio': {},
@@ -127,20 +127,20 @@ class Metrics():
         stats['portfolio']['Win Rate Std'] = self.values['%'].map(lambda x: x if x > 0 else 0).std() 
         stats['portfolio']['Loss Rate Std'] = self.values['%'].map(lambda x: x if x < 0 else 0).std() 
         
-        stats['portfolio_net']['Cumulative Return'] = (1+self.values['returns_net']).prod() - 1
-        stats['portfolio_net']['Annualized Return'] = (1+stats['portfolio_net']['Cumulative Return']) ** (252/len(self.values.index)) - 1
-        stats['portfolio_net']['Annualized Volatility'] = self.values['returns_net'].std() * np.sqrt(252)
-        stats['portfolio_net']['Sharpe Ratio'] = stats['portfolio_net']['Annualized Return'] / stats['portfolio_net']['Annualized Volatility']
-        stats['portfolio_net']['Sortino Ratio'] = stats['portfolio_net']['Annualized Return'] / (self.values.loc[self.values['%'] < 0, 'returns_net'].std() * np.sqrt(252))
-        stats['portfolio_net']['Max Drawdown'] = self.values['dd_net'].min()
-        stats['portfolio_net']['Calmar Ratio'] = stats['portfolio_net']['Annualized Return'] / abs(stats['portfolio_net']['Max Drawdown'])
-        stats['portfolio_net']['Win Rate'] = self.values['returns_net'].map(lambda x: 1 if x > 0 else 0).sum() / len(self.values.index)
-        stats['portfolio_net']['Loss Rate'] = self.values['returns_net'].map(lambda x: 1 if x < 0 else 0).sum() / len(self.values.index)
-        stats['portfolio_net']['Pass Rate'] = self.values['returns_net'].map(lambda x: 1 if x == 0 else 0).sum() / len(self.values.index)
-        stats['portfolio_net']['Win Rate Mean'] = self.values['returns_net'].map(lambda x: x if x > 0 else 0).mean() 
-        stats['portfolio_net']['Loss Rate Mean'] = self.values['returns_net'].map(lambda x: x if x < 0 else 0).mean() 
-        stats['portfolio_net']['Win Rate Std'] = self.values['returns_net'].map(lambda x: x if x > 0 else 0).std() 
-        stats['portfolio_net']['Loss Rate Std'] = self.values['returns_net'].map(lambda x: x if x < 0 else 0).std() 
+        #stats['portfolio_net']['Cumulative Return'] = (1+self.values['returns_net']).prod() - 1
+        #stats['portfolio_net']['Annualized Return'] = (1+stats['portfolio_net']['Cumulative Return']) ** (252/len(self.values.index)) - 1
+        #stats['portfolio_net']['Annualized Volatility'] = self.values['returns_net'].std() * np.sqrt(252)
+        #stats['portfolio_net']['Sharpe Ratio'] = stats['portfolio_net']['Annualized Return'] / stats['portfolio_net']['Annualized Volatility']
+        #stats['portfolio_net']['Sortino Ratio'] = stats['portfolio_net']['Annualized Return'] / (self.values.loc[self.values['%'] < 0, 'returns_net'].std() * np.sqrt(252))
+        #stats['portfolio_net']['Max Drawdown'] = self.values['dd_net'].min()
+        #stats['portfolio_net']['Calmar Ratio'] = stats['portfolio_net']['Annualized Return'] / abs(stats['portfolio_net']['Max Drawdown'])
+        #stats['portfolio_net']['Win Rate'] = self.values['returns_net'].map(lambda x: 1 if x > 0 else 0).sum() / len(self.values.index)
+        #stats['portfolio_net']['Loss Rate'] = self.values['returns_net'].map(lambda x: 1 if x < 0 else 0).sum() / len(self.values.index)
+        #stats['portfolio_net']['Pass Rate'] = self.values['returns_net'].map(lambda x: 1 if x == 0 else 0).sum() / len(self.values.index)
+        #stats['portfolio_net']['Win Rate Mean'] = self.values['returns_net'].map(lambda x: x if x > 0 else 0).mean() 
+        #stats['portfolio_net']['Loss Rate Mean'] = self.values['returns_net'].map(lambda x: x if x < 0 else 0).mean() 
+        #stats['portfolio_net']['Win Rate Std'] = self.values['returns_net'].map(lambda x: x if x > 0 else 0).std() 
+        #stats['portfolio_net']['Loss Rate Std'] = self.values['returns_net'].map(lambda x: x if x < 0 else 0).std() 
 
 
         if not self.trading_log is None and not self.trading_log.empty:
@@ -169,16 +169,16 @@ class Metrics():
 
     def __group_returns(self):
 
-        grouped_m_returns = self.values[['returns_net', 'year-month']].groupby('year-month').apply(lambda x: (1+x).prod() -1)
+        grouped_m_returns = self.values[['%', 'year-month']].groupby('year-month').apply(lambda x: (1+x).prod() -1)
         grouped_m_returns['month_num'] = grouped_m_returns.index.month
         grouped_m_returns['year'] = grouped_m_returns.index.year
-        grouped_m_returns = grouped_m_returns.pivot_table(index = 'year', columns = 'month_num', values= 'returns_net')
+        grouped_m_returns = grouped_m_returns.pivot_table(index = 'year', columns = 'month_num', values= '%')
         grouped_m_returns.columns = [calendar.month_name[x] for x in grouped_m_returns.columns]
         grouped_m_returns.index.name = 'Year'
-        grouped_y_returns = self.values[['returns_net', 'year']].groupby('year').apply(lambda x: (1+x).prod() - 1)
-        grouped_y_returns_vol = self.values[['returns_net', 'year']].groupby('year').apply(lambda x: x.std() * np.sqrt(252))
-        grouped_y_returns['volatility'] = grouped_y_returns_vol['returns_net']
-        grouped_y_returns['sharpe'] = grouped_y_returns['returns_net'] / grouped_y_returns['volatility']
+        grouped_y_returns = self.values[['%', 'year']].groupby('year').apply(lambda x: (1+x).prod() - 1)
+        grouped_y_returns_vol = self.values[['%', 'year']].groupby('year').apply(lambda x: x.std() * np.sqrt(252))
+        grouped_y_returns['volatility'] = grouped_y_returns_vol['%']
+        grouped_y_returns['sharpe'] = grouped_y_returns['%'] / grouped_y_returns['volatility']
         grouped_y_returns.index = grouped_y_returns.index.year
         grouped_y_returns.columns = ['Return', 'Volatility', 'Sharpe']
         grouped_y_returns.index.name = 'Year' 
@@ -197,15 +197,15 @@ class Metrics():
         print(f"Max Drawdown: {self.statistics['portfolio']['Max Drawdown']*100:.2f}%")
         print(f"Calmar Ratio: {self.statistics['portfolio']['Calmar Ratio']:.2f}")
         print()
-        print(f'----- Portfolio Statistics (Net of {self.management_fee*100:.1f}% | {self.performance_fee*100:.1f}%) -----')
-        print(f"Cumulative Return: {self.statistics['portfolio_net']['Cumulative Return']*100:.2f}%")
-        print(f"Annualized Return: {self.statistics['portfolio_net']['Annualized Return']*100:.2f}%")
-        print(f"Annualized Volatility: {self.statistics['portfolio_net']['Annualized Volatility']*100:.2f}%")
-        print(f"Sharpe Ratio: {self.statistics['portfolio_net']['Sharpe Ratio']:.2f}")
-        print(f"Sortino Ratio: {self.statistics['portfolio_net']['Sortino Ratio']:.2f}")
-        print(f"Max Drawdown: {self.statistics['portfolio_net']['Max Drawdown']*100:.2f}%")
-        print(f"Calmar Ratio: {self.statistics['portfolio_net']['Calmar Ratio']:.2f}")
-        print()
+        #print(f'----- Portfolio Statistics (Net of {self.management_fee*100:.1f}% | {self.performance_fee*100:.1f}%) -----')
+        #print(f"Cumulative Return: {self.statistics['portfolio_net']['Cumulative Return']*100:.2f}%")
+        #print(f"Annualized Return: {self.statistics['portfolio_net']['Annualized Return']*100:.2f}%")
+        #print(f"Annualized Volatility: {self.statistics['portfolio_net']['Annualized Volatility']*100:.2f}%")
+        #print(f"Sharpe Ratio: {self.statistics['portfolio_net']['Sharpe Ratio']:.2f}")
+        #print(f"Sortino Ratio: {self.statistics['portfolio_net']['Sortino Ratio']:.2f}")
+        #print(f"Max Drawdown: {self.statistics['portfolio_net']['Max Drawdown']*100:.2f}%")
+        #print(f"Calmar Ratio: {self.statistics['portfolio_net']['Calmar Ratio']:.2f}")
+        #print()
         print('----- Trades -----')
         print(f"Win Rate: {self.statistics['portfolio']['Trade Win Rate']*100:.1f}% (avg: {self.statistics['portfolio']['Trade Win Avg']*100:.1f}%, std: {self.statistics['portfolio']['Trade Win Std']*100:.1f}%)")
         print(f"Loss Rate: {self.statistics['portfolio']['Trade Loss Rate']*100:.1f}% (avg: {self.statistics['portfolio']['Trade Loss Avg']*100:.1f}%, std: {self.statistics['portfolio']['Trade Loss Std']*100:.1f}%)")
@@ -218,11 +218,11 @@ class Metrics():
         print(f"Loss Rate: {self.statistics['portfolio']['Loss Rate']*100:.1f}% (avg: {self.statistics['portfolio']['Loss Rate Mean']*100:.1f}%, {self.statistics['portfolio']['Loss Rate Std']*100:.1f}%)")
         print(f"Pass Rate: {self.statistics['portfolio']['Pass Rate']*100:.1f}%")
         print()
-        print('----- Daily Returns (Net of fees) -----')
-        print(f"Win Rate: {self.statistics['portfolio_net']['Win Rate']*100:.1f}% (avg: {self.statistics['portfolio_net']['Win Rate Mean']*100:.1f}%, {self.statistics['portfolio_net']['Win Rate Std']*100:.1f}%)")
-        print(f"Loss Rate: {self.statistics['portfolio_net']['Loss Rate']*100:.1f}% (avg: {self.statistics['portfolio_net']['Loss Rate Mean']*100:.1f}%, {self.statistics['portfolio_net']['Loss Rate Std']*100:.1f}%)")
-        print(f"Pass Rate: {self.statistics['portfolio_net']['Pass Rate']*100:.1f}%")
-        print()
+        #print('----- Daily Returns (Net of fees) -----')
+        #print(f"Win Rate: {self.statistics['portfolio_net']['Win Rate']*100:.1f}% (avg: {self.statistics['portfolio_net']['Win Rate Mean']*100:.1f}%, {self.statistics['portfolio_net']['Win Rate Std']*100:.1f}%)")
+        #print(f"Loss Rate: {self.statistics['portfolio_net']['Loss Rate']*100:.1f}% (avg: {self.statistics['portfolio_net']['Loss Rate Mean']*100:.1f}%, {self.statistics['portfolio_net']['Loss Rate Std']*100:.1f}%)")
+        #print(f"Pass Rate: {self.statistics['portfolio_net']['Pass Rate']*100:.1f}%")
+        #print()
         print('----- Monthly Returns -----')
         print(self.monthly_returns.applymap(lambda x: '' if np.isnan(x) else f'{round(x*100,1)}%'))
         printable_y = self.yearly_returns[['Return', 'Volatility']]
@@ -233,15 +233,16 @@ class Metrics():
         print(printable_y)
 
 
-    def plot(self):
+    def plot(self, index = True):
         #fig , axs = plt.subplots((2, 2))
         #axs[0, 0].set_title('Cumulative Return (%) against Maximum Drawdown (%)')
         #axs[1].set_title('Distribution of Trade Returns (%)')
         #axs[1].set_xlim(xmin= -0.015, xmax=0.015)
         #axs[2].set_title('Portfolio Positioning')
         self.values['cumulative'].plot(color = 'blue', secondary_y = True)
-        self.values['returns_net_cum'].plot(color = 'navy', secondary_y = True)
-        self.values['index_returns'].plot(color = 'grey',secondary_y = True) 
+        #self.values['returns_net_cum'].plot(color = 'navy', secondary_y = True)
+        if index:
+            self.values['index_returns'].plot(color = 'grey',secondary_y = True) 
         self.values['dd'].plot.area(stacked=False, color = 'red', alpha = 0.5)
         #self.trading_log.loc[self.trading_log['pnl%'] > 0, 'pnl%'].hist(ax = axs[1], color = 'green', bins = 100)
         #self.trading_log.loc[self.trading_log['pnl%'] < 0, 'pnl%'].hist(ax = axs[1], color = 'red', bins = 100)

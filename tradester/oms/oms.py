@@ -143,7 +143,10 @@ class OMS():
 
             market_value = self.universes[universe].streams[identifier].market_value
             multiplier = self.universes[universe].active_info[identifier]['multiplier'] if id_type == 'FUT' else 1
-            max_shares = int(self.max_shares(id_type, identifier, universe))
+            try:
+                max_shares = int(self.max_shares(id_type, identifier, universe))
+            except:
+                max_shares = 0
 
             filled_units = min(units, max(max_shares, 5))
             order_fill = False

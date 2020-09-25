@@ -2,6 +2,10 @@ import tradester.utils.svconfig as sv
 import pandas as pd
 import tempfile
 import warnings
+import subprocess
+from datetime import datetime 
+import os
+from time import sleep
 
 __all__ = ['MetaFeed', 'TSFeed', 'CustomFeed']
 
@@ -61,6 +65,7 @@ class Feed():
         self.identity_field = identity_field
         self.credentials = credentials
         self.connector = sv.connector(credentials)
+        self.complete_fields = fields
         self._data = None
 
     def __validate(self, identifiers):
@@ -81,22 +86,43 @@ class Feed():
             return self._data
         else:
             raise NotImplementedError("You did not set ``_data``")
+    
 
 
     def __tmp_query(self, query):
-        query = query.replace(';','')
-        with tempfile.TemporaryFile() as tmpfile:
-            copy_sql = "copy ({}) to stdout with csv {}".format(query, "HEADER")
-            cnx = self.connector.engine().raw_connection()
-            cur = cnx.cursor()
-            if self.connector.s_type == 'postgres':
-                cur.copy_expert(copy_sql, file=tmpfile)
-            else:
-                cur.copy_export(copy_sql, tmpfile)
-            tmpfile.seek(0)
-            cnx.close()
-            cur.close()
-            return pd.read_csv(tmpfile)
+        if self.connector.credentials['s_type'] != 'mssql+pyodbc':
+            query = query.replace(';','')
+            with tempfile.TemporaryFile() as tmpfile:
+                copy_sql = "copy ({}) to stdout with csv {}".format(query, "HEADER")
+                cnx = self.connector.engine().raw_connection()
+                cur = cnx.cursor()
+                if self.connector.s_type == 'postgres':
+                    cur.copy_expert(copy_sql, file=tmpfile)
+                else:
+                    cur.copy_export(copy_sql, tmpfile)
+                tmpfile.seek(0)
+                cnx.close()
+                cur.close()
+                return pd.read_csv(tmpfile)
+        else:
+            query = query.replace(';','')
+            path = f'c:/users/will/appdata/local/temp/{str(datetime.now().timestamp()).replace(".","-")}.csv'
+            command = 'BCP "{}" queryout "{}" -t "," -U "{}" -P "{}" -S "{}" -d production -r \\n -c'.format(
+                    query,
+                    path,
+                    self.connector.credentials['user'],
+                    self.connector.credentials['password'],
+                    self.connector.credentials['host'],
+                    )
+            subprocess.call(command, shell = True)
+            fields = getattr(self,'complete_fields')
+            if fields != '*':
+                fields = fields.replace(' ', '').split(',')
+            df = pd.read_csv(path, names = fields)
+            os.remove(path)
+            return df
+
+
             
 
     def __pd_query(self, query):
@@ -106,6 +132,7 @@ class Feed():
 
     def _query(self, query):
         if self.try_tmp_query:
+            return self.__tmp_query(query)
             try:
                 return self.__tmp_query(query)
             except:
@@ -206,11 +233,22 @@ class TSFeed(Feed):
         self.end_date = end_date
         self._data = None if override else self.__gather_data() 
 
+    def __handle_fields(self, query):
+        if self.connector.credentials['s_type'] == 'mssql+pyodbc':
+            query = query.replace("open", f"{self.datatable}.[open] as 'open'")
+            query = query.replace("high", f"{self.datatable}.[high] as 'high'")
+            query = query.replace("low", f"{self.datatable}.[low] as 'low'")
+            query = query.replace("close", f"{self.datatable}.[close] as 'close'")
+            query = query.replace("volume", f"{self.datatable}.[volume] as 'volume'")
+            query = query.replace("open_interest", f"{self.datatable}.[open_interest] as 'open_interest'")
+        return query
+
     def __gather_data(self):
+        self.complete_fields = f'date, {self.identity_field}, {self.fields}'
         if self.identifiers_type is list:
-            query = "select date, {}, {} from {} where {} in ({})".format(self.identity_field, self.fields, self.datatable, self.identity_field, str(self.identifiers).strip('[]'))
+            query = "select date, {}, {} from {} where {} in ({})".format(self.identity_field, self.__handle_fields(self.fields), self.datatable, self.identity_field, str(self.identifiers).strip('[]'))
         else:
-            query = "select date, {}, {} from {} where {} = '{}'".format(self.identity_field, self.fields, self.datatable, self.identity_field, self.identifiers)
+            query = "select date, {}, {} from {} where {} = '{}'".format(self.identity_field, self.__handle_fields(self.fields), self.datatable, self.identity_field, self.identifiers)
         
         if self.start_date:
             query += " and date >= '{}'".format(self.start_date)
