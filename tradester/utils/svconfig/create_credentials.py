@@ -1,6 +1,7 @@
 import os
 import json
 
+
 def create_credentials():
     print("Welcome to the credentail creator. This script helps create different json credentials for server connectivity. While rudementary, it works! For ease of use, the default save location is the user's root directory.")
     run = True

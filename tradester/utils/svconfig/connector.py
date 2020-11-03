@@ -3,7 +3,11 @@ import json
 import sqlalchemy
 import psycopg2
 import mysql.connector as mysql
-import pyodbc
+
+try:
+    import pyodbc
+except:
+    pass
 
 
 class connector():

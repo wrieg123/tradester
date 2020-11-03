@@ -92,18 +92,22 @@ class Feed():
     def __tmp_query(self, query):
         if self.connector.credentials['s_type'] != 'mssql+pyodbc':
             query = query.replace(';','')
-            with tempfile.TemporaryFile() as tmpfile:
-                copy_sql = "copy ({}) to stdout with csv {}".format(query, "HEADER")
-                cnx = self.connector.engine().raw_connection()
-                cur = cnx.cursor()
-                if self.connector.s_type == 'postgres':
+            cnx = self.connector.engine().raw_connection()
+            cur = cnx.cursor()
+            if self.connector.s_type == 'postgres':
+                with tempfile.TemporaryFile() as tmpfile:
+                    copy_sql = "copy ({}) to stdout with csv {}".format(query, "HEADER")
                     cur.copy_expert(copy_sql, file=tmpfile)
-                else:
-                    cur.copy_export(copy_sql, tmpfile)
-                tmpfile.seek(0)
-                cnx.close()
-                cur.close()
-                return pd.read_csv(tmpfile)
+                    tmpfile.seek(0)
+                    cnx.close()
+                    cur.close()
+                    return pd.read_csv(tmpfile)
+            else:
+                cur.execute(query)
+                columns = [i[0] for i in cur.description]
+                data = cur.fetchall()
+                df = pd.DataFrame(data, columns = columns)
+                return df
         else:
             query = query.replace(';','')
             path = f'c:/users/will/appdata/local/temp/{str(datetime.now().timestamp()).replace(".","-")}.csv'
