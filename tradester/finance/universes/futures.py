@@ -62,6 +62,9 @@ class FuturesUniverse(Universe):
         self.calendars = self.__create_calendar()
         self.continuations_meta = self.__get_continuations_meta()
         self._assets = {k : Future(k, name, bar, v) for k, v in list(self.futures_meta.items())}
+        self.inactive = None
+        self.active = None
+        self.set_active()
 
     def __get_products_meta(self):
         """returns information for product information"""
@@ -125,18 +128,21 @@ class FuturesUniverse(Universe):
             calendar[product] = sub_df[conts]
         return calendars
                     
-    @property
-    def active(self):
+    def set_active(self):
         """ active contracts returned as dict in format: 
             {
                 product code: {_product_-_period_: contract, ... },
                 ...
             }
         """
-        contracts = {}
+        active_contracts = {}
+        inactive_contracts = {}
         for product in self.products:
-            contracts[product] = self.calendars[product].loc[self.calendars[product].index < self.manager.now].tail(1).to_dict(orient = 'records')[0]
-        return contracts
+            active_contracts[product] = self.calendars[product].loc[self.calendars[product].index < self.manager.now].tail(1).to_dict(orient = 'records')[0]
+            inactive_list = list(set(list(self.calendars[product].loc[self.calendars[product].index < self.manager.now].head(-1).values.flatten())))
+            inactive_contracts[product] = [x for x in inactive_list if x not in active_contracts[product].values()]
+        self.active = active_contracts
+        self.inactive = inactive_contracts
 
     @property
     def assets(self):
