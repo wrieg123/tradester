@@ -1,9 +1,9 @@
 from tradester.feeds.static import FuturesTS
-from .feed import Feed, FeedGroup
+from .worker import Worker, WorkerGroup
 
-class FuturesFeed(Feed):
+class FuturesWorker(Worker):
     """
-    A FuturesFeed is a child of parent, Feed, which is build specifically to handle futures contracts.
+    A FuturesWorker is a child of parent, Worker, which is build specifically to handle futures contracts.
     
     Parameters
     ----------
@@ -33,7 +33,7 @@ class FuturesFeed(Feed):
 
     See Also
     --------
-    etl.feeds.active.Feed
+    etl.feeds.active.Worker
     etl.feeds.static.FuturesTS
     """
     
@@ -43,7 +43,7 @@ class FuturesFeed(Feed):
         self.__check_feed()
     
     def __repr__(self):
-        return f'<FuturesFeed {self.identifier} ({self.start_date.strftime("%Y-%m-%d")} -> {self.end_date.strftime("%Y-%m-%d")})>'
+        return f'<FuturesWorker {self.identifier} ({self.start_date.strftime("%Y-%m-%d")} -> {self.end_date.strftime("%Y-%m-%d")})>'
 
     def __check_feed(self):
         if self.feed is None:
@@ -55,9 +55,9 @@ class FuturesFeed(Feed):
             self.end_date = max(self.feed.keys())
 
 
-class FuturesFactory(FeedGroup):
+class FuturesFactory(WorkerGroup):
     """
-    A FuturesGroup is a FeedGroup built to handle futures contracts.
+    A FuturesGroup is a WorkerGroup built to handle futures contracts.
     
     Parameters
     ----------
@@ -82,30 +82,24 @@ class FuturesFactory(FeedGroup):
     Methods
     -------
     __update_group()
-        upon class initialization, add in the identifier FuturesFeed objects
+        upon class initialization, add in the identifier FuturesWorker objects
     _get_feed(contract : String, temp, optional : dictionary):
-        returns Feed object within self.group at contract, if temp is passed in; handles support for pooling
+        returns Worker object within self.group at contract, if temp is passed in; handles support for pooling
         of multiple FuturesGroups
-    add(contract : String, feed, optional : FuturesFeed)
-        adds an individual contract to the group and creates a FuturesFeed, if no feed is provided    
+    add(contract : String, feed, optional : FuturesWorker)
+        adds an individual contract to the group and creates a FuturesWorker, if no feed is provided    
     add_group(group: list)
-        adds a group of FuturesFeed to the self.group, creates FuturesFeed from block of FuturesTS
+        adds a group of FuturesWorker to the self.group, creates FuturesWorker from block of FuturesTS
     set_streams(streams : Dictionary, remove, optional : list)
-        adds in streams from a dictionary to point to the FuturesFeed, if remove is not None, removes a list 
+        adds in streams from a dictionary to point to the FuturesWorker, if remove is not None, removes a list 
         of streams from being actively tracked
     remove_feeds(keys : list) 
         deletes the feeds by key from memory storage of self.group and self.active_group
     check(contract : String)
-        checks for update of feed of individual FuturesFeed by contract if it is still active
+        checks for update of feed of individual FuturesWorker by contract if it is still active
     check_all()
-        checks for update of all active contract FuturesFeeds
+        checks for update of all active contract FuturesWorkers
 
-    See Also
-    --------
-    etl.feeds.active.FeedGroup
-    etl.feeds.active.FuturesFeed
-    etl.feeds.active.Stream
-    etl.feeds.static.FuturesTS
     """
 
     def __init__(self, identifiers = [], start_date = None, end_date = None, bar = 'daily', cache = None):
@@ -126,7 +120,7 @@ class FuturesFactory(FeedGroup):
     
 
     def _get_feed(self, contract, temp = None):
-        feed = FuturesFeed(contract, start_date = self.start_date, end_date = self.end_date, bar = self.bar_type) 
+        feed = FuturesWorker(contract, start_date = self.start_date, end_date = self.end_date, bar = self.bar_type) 
         if not temp is None:    
             temp[contract] = feed
         else:
@@ -154,7 +148,7 @@ class FuturesFactory(FeedGroup):
                 df.columns = ['contract', 'field', 'date', 'value']
             for contract in group:
                 try:
-                    self.group[contract] = FuturesFeed(contract, bar = self.bar_type, feed = df.loc[df.contract == contract].pivot_table(index = 'date', columns = 'field', values = 'value').to_dict(orient = 'index'), cache = self.cache)
+                    self.group[contract] = FuturesWorker(contract, bar = self.bar_type, feed = df.loc[df.contract == contract].pivot_table(index = 'date', columns = 'field', values = 'value').to_dict(orient = 'index'), cache = self.cache)
                 except:
                     self.not_tradeable.append(contract)
                     print(contract, 'not tradeable')

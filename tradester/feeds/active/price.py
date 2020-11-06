@@ -72,7 +72,6 @@ class Price(Stream):
             else:
                 return self.close.v * self.multiplier
 
-
     @property
     def v(self):
         return {a: getattr(self, a).v for a in self.attributes}

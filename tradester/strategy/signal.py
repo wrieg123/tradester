@@ -2,8 +2,6 @@ import numpy as np
 
 class Signal():
 
-
-
     def __init__(self, indicator, identifiers, grouping = None, name = None):
         self.indicator = indicator
         self.indicator_name = self.indicator.__class__.__name__ if name is None else name
@@ -17,7 +15,6 @@ class Signal():
 
 
 class SignalGroup():
-
 
     def __init__(self):
         self.group = []

@@ -14,6 +14,8 @@ class Universe():
 
     Parameters
     ----------
+    name : String
+        name of the universe
     start_date : String
         a YYYY-MM-DD representing the start date of the Universe
     end_date :  String
@@ -33,9 +35,10 @@ class Universe():
     etl.feeds.active.FeedManager
     """
 
-    def __init__(self, id_type, start_date, end_date):
+    def __init__(self, id_type, name, start_date, end_date):
         self.manager = None 
         self.id_type = id_type
+        self.name = name
         self.start_date = start_date 
         self.end_date = end_date
     

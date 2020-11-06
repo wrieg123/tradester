@@ -41,10 +41,8 @@ class Strategy():
                 self.covariance_map[name] = SignalGroup()
             self.covariance_map[name]._add(Signal(indicator, identifiers, grouping = group))
 
-
     def initialize(self):
         raise NotImplementedError("You must implement a self.initialize() method")
-    
 
     def trade(self):
         get_trades = getattr(self, 'get_trades', None)
