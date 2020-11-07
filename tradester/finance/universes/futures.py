@@ -114,6 +114,7 @@ class FuturesUniverse(Universe):
             sub_df = df.loc[df['product'] == product].copy()
             sub_df = sub_df[['contract', self.roll_on]].set_index(self.roll_on)
             sub_df.index = pd.to_datetime(sub_df.index)
+            sub_df.sort_index(inplace = True)
             sub_df.columns = [f'{product}-1']
             conts = []
 
@@ -139,9 +140,9 @@ class FuturesUniverse(Universe):
         active_products = {}
         inactive_products = {}
         for product in self.products:
-            active_products[product] = self.calendars[product].loc[self.calendars[product].index < self.manager.now].tail(1).to_dict(orient = 'records')[0]
-            inactive_list = list(set(list(self.calendars[product].loc[self.calendars[product].index < self.manager.now].head(-1).values.flatten())))
-            inactive_products[product] = [x for x in inactive_list if x not in active_products[product].values()]
+            active_products[product] = self.calendars[product].loc[self.calendars[product].index > self.manager.now].head(1).to_dict(orient = 'records')[0]
+            #inactive_list = list(set(list(self.calendars[product].loc[self.calendars[product].index < self.manager.now].tail(-1).values.flatten())))
+            #inactive_products[product] = [x for x in inactive_list if x not in active_products[product].values()]
 
         tradeable = []
         for asset in self.assets.values():

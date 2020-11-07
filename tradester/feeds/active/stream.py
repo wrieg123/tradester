@@ -37,10 +37,12 @@ class Stream():
     def __init__(self, cache):
         self.cache = cache
         self._stream = []
+        #self._stream = np.array([]) 
         self._pointer = 0
     
     @property
     def ts(self):
+        #return self._stream
         return np.array(self._stream) 
 
     @property
@@ -62,7 +64,6 @@ class Stream():
         if self.pointer == 0 or other.pointer == 0:
             return None
         shift = self.pointer - other.pointer
-        #print(shift)
         if shift > 0:
             return self.ts[abs(shift):] + other.ts
         elif shift < 0:
@@ -110,9 +111,10 @@ class Stream():
 
     def push(self, x):
         if str(x) != 'nan' or not x is None:
-            self._stream.append(x)
+            self._stream = np.append(self._stream, x)
+            #self._stream.append(x)
             self._pointer += 1
-            self._check_cache()
+            #self._check_cache()
         else:
             raise ValueError('The input type is not in (int, float)')
         

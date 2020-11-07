@@ -29,13 +29,15 @@ class Indicator():
         else:
             return {a: getattr(self, a).ts for a in self.attributes}
     
-    def refresh(self):
+    @property
+    def should_refresh(self):
         should_refresh = True
-
-        if isinstance(self.data, (Future, Security)):
+        if isinstance(self.data, (Future, Security)) or isinstance(self.data, list) and isinstance(self.data[0], (Future, Security)):
             should_refresh = self.data.tradeable
+        return should_refresh
 
-        if should_refresh:
+    def refresh(self):
+        if self.should_refresh:
             if len(self.attributes) == 1:
                 getattr(self, self.attributes[0]).push(self.calculate())
             else:

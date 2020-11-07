@@ -162,7 +162,7 @@ class Portfolio():
         short_equity = 0
         pnl = 0
 
-        for identifier, position in self_positions.items():
+        for identifier, position in self._positions.items():
             asset = position.asset
 
             info = position.info

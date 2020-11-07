@@ -6,7 +6,6 @@ class Order():
         self.status = 'PLACED'
         self.num = num
         self.order_type = order_type
-        self.universe = universe
         self.asset = asset
         self.id_type = asset.id_type
         self.identifier = asset.identifier
@@ -30,7 +29,6 @@ class Order():
             'status': self.status,
             'num': self.num,
             'order_type': self.order_type,
-            'universe': self.universe,
             'id_type': self.id_type,
             'identifier': self.identifier,
             'side': self.side,

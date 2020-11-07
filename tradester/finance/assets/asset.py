@@ -31,7 +31,10 @@ class Asset():
     
     @property
     def tradeable(self):
-        return pd.to_datetime(self.meta[f'{self.bar}_start_date']) <= self.manager.now <= pd.to_datetime(self.meta[f'{self.bar}_end_date'])
+        if self.meta[f'{self.bar}_start_date'] is None or self.meta[f'{self.bar}_start_date'] is None:
+            return False
+        else:
+            return pd.to_datetime(self.meta[f'{self.bar}_start_date']) <= self.manager.now <= pd.to_datetime(self.meta[f'{self.bar}_end_date'])
 
     def set_manager(self, manager):
         self.manager = manager

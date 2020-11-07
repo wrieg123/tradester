@@ -29,7 +29,11 @@ class Strategy():
             i.refresh()
         for i in list(self.covariance_map.values()):
             i.refresh()
-        self.bottom_up.refresh()
+        assets =  []
+        for u in self.universes.values():
+            for a in u.tradeable:
+                assets.append(a)
+        self.bottom_up.refresh(assets = assets)
 
     def add(self, indicator, identifiers, base = 'bottom_up', group = None, name = None):
         if base == 'bottom_up':
@@ -54,9 +58,8 @@ class Strategy():
         positions = self.portfolio.positions
 
         for c, info in list(trades.items()):
-            id_type = info['id_type']
-            universe = info['universe']
+            asset = info['asset']
             delta = info['delta']
 
             if delta != 0 and not c is None:
-                self.oms.place_order(1 if delta > 0 else -1, id_type, c, abs(delta), universe)
+                self.oms.place_order(1 if delta > 0 else -1, asset, delta)

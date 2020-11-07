@@ -224,5 +224,5 @@ class WorkerGroup():
         self.active = active
 
     def check_all(self):
-        for i, f in self.active:
-            f.check()
+        for f in self.active:
+            self.group[f].check()

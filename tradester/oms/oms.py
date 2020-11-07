@@ -63,16 +63,16 @@ class OMS():
                         info['id_type'], 
                         info['identifier'], 
                         info['units'] - filled_units, 
-                        info['universe'], 
                         time_in_force = info['time_in_force'],
                         order_type = info['order_type'],
                         bands = info['bands']
                     )
 
 
-    def place_order(self, side, asset, units, universe, time_in_force = None, order_type = 'MARKET', bands = {}, fok = False):
+    def place_order(self, side, asset, units, time_in_force = None, order_type = 'MARKET', bands = {}, fok = False):
         id_type = asset.id_type
         identifier = asset.identifier
+
         if identifier in list(self.order_book.keys()):
             self.order_book[identifier].update(self.manager.now)
             self._remove_from_ob(identifier)
@@ -81,7 +81,6 @@ class OMS():
         self.order_book[identifier] = Order(
                 self.order_num, 
                 order_type,
-                universe,
                 asset,
                 side,
                 units,
@@ -107,15 +106,12 @@ class OMS():
             order.bump()
             info = order.info
             asset = order.asset
-            universe = info['universe'] 
-            inactive = getattr(self.universes[universe], 'inactive', None)
 
-            if not inactive is None:
-                if identifier in self.universes[universe].inactive:
-                    order.cancel(self.manager.now)
-                    self._remove_from_ob(identifier)
-                    continue
-            
+            if not asset.tradeable:
+                order.cancel(self.manager.now)
+                self._remove_from_ob(identifier)
+                continue
+
             side = info['side']
             bands = info['bands']
             order_type = info['order_type']
