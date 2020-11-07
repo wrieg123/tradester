@@ -110,12 +110,10 @@ class Engine():
 
                 for _, factory in list(self.feed_factories.items()):
                     factory.check_all()
+
                 for name, universe in list(self.universes.items()):
                     universe.refresh()
-                    if universe.id_type == 'FUT':
-                        self.feed_factories[name].set_streams(universe.streams,  remove = universe.inactive)
-                    else:
-                        self.feed_factories[name].set_streams(universe.streams)
+                    self.feed_factories[name].set_active(universe.tradeable)
                 
                 self.oms.process()
                 self.portfolio.reconcile()

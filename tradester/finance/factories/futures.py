@@ -31,10 +31,6 @@ class FuturesWorker(Worker):
         checks to see if a data feed was set upon class initialization. If not, access a static FuturesTS
         feed and sets self.feed. Currently, only supports daily bar types.
 
-    See Also
-    --------
-    etl.feeds.active.Worker
-    etl.feeds.static.FuturesTS
     """
     
     def __init__(self, contract, start_date = None, end_date = None, bar = 'daily', feed = None, cache = None):
@@ -153,36 +149,7 @@ class FuturesFactory(WorkerGroup):
                     self.not_tradeable.append(contract)
                     print(contract, 'not tradeable')
 
-    def set_streams(self, streams, remove = None):
-        new_streams = [x for x in list(streams.keys()) if x not in self.members + self.not_tradeable + list(self.group.keys())]
-        if len(new_streams) > 0:
-            self.add_group(new_streams)
+    def set_streams(self, streams):
         for k, s in list(streams.items()):
             if k not in self.not_tradeable:
-                if k in list(self.group.keys()):
-                    self.active_group[k] = self.group.pop(k)
-                self.active_group[k].set_stream(s)
-                if k in new_streams:
-                    self.active_group[k].check()
-        if not remove is None:  
-            self.remove_feeds(remove)
-
-    def remove_feeds(self, keys):
-        keys = [x for x in keys if x in list(self.group.keys()) + list(self.active_group.keys())]
-        for key in keys:
-            if key in list(self.group.keys()):
-                del self.group[key]
-            if key in list(self.active_group.keys()):
-                del self.active_group[key]
-
-    def remove_feed(self, key):
-        del self.group[key]
-
-    def check(self, key):
-        if key in list(self.active_group.keys()):
-            self.active_group[key].check()
-
-    def check_all(self):
-        for i, f in list(self.active_group.items()):
-            f.check()
-    
+                self.group[k].set_stream(s)

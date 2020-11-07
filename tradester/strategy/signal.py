@@ -7,11 +7,9 @@ class Signal():
         self.indicator_name = self.indicator.__class__.__name__ if name is None else name
         self.identifiers = identifiers if isinstance(identifiers, list) else [identifiers]
         self.grouping = grouping
-   
 
     def refresh(self):
         self.indicator.refresh()
-
 
 
 class SignalGroup():
@@ -69,10 +67,8 @@ class SignalGroup():
 
         return temp_dict
 
-
     def _add(self, signal : Signal):
         self.group.append(signal)
-
 
     def refresh(self):
         for i in self.group:

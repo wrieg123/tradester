@@ -2,13 +2,14 @@
 
 class Order():
     
-    def __init__(self, num, order_type, universe, id_type, identifier, side, units, entry_date, entry_price, time_in_force = None, bands = {}, fok = False):
+    def __init__(self, num, order_type, asset, identifier, side, units, entry_date, entry_price, time_in_force = None, bands = {}, fok = False):
         self.status = 'PLACED'
         self.num = num
         self.order_type = order_type
         self.universe = universe
-        self.id_type = id_type
-        self.identifier = identifier
+        self.asset = asset
+        self.id_type = asset.id_type
+        self.identifier = asset.identifier
         self.side = side
         self.units = units
         self.entry_date = entry_date

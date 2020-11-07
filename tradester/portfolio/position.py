@@ -2,19 +2,18 @@
 
 class Position():
 
-    def __init__(self, stream, id_type, identifier, multiplier, side, units, cost_basis, universe):
-        self.stream = stream
-        self.id_type = id_type
-        self.identifier = identifier
-        self.multiplier = multiplier
+    def __init__(self, asset, side, units, cost_basis):
+        self.asset = asset
+        self.id_type = asset.id_type
+        self.identifier = asset.identifier
+        self.multiplier = asset.price_stream.multiplier
         self.side = side
         self.units = units
         self.cost_basis = cost_basis
-        self.universe = universe
     
     @property
     def market_value(self):
-        return self.units * self.stream.market_value * self.side
+        return self.units * self.asset.price_stream.market_value * self.side
 
     @property
     def pnl(self):
@@ -36,7 +35,6 @@ class Position():
             'market_value': self.market_value,
             'pnl': self.pnl,
             'avg_px': self.avg_px,
-            'last': self.stream.close.v,
-            'universe': self.universe,
+            'last': self.asset.price_stream.close.v,
         }
 

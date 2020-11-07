@@ -41,6 +41,7 @@ class Universe():
         self.name = name
         self.start_date = start_date 
         self.end_date = end_date
+        
     
     def set_start_date(self, date):
         self.start_date = date
@@ -50,3 +51,5 @@ class Universe():
 
     def set_manager(self, manager):
         self.manager = manager 
+        for a in self.assets.values():
+            a.set_manager(manager)

@@ -80,13 +80,6 @@ class Price(Stream):
     def ts(self):
         return {a: getattr(self, a).ts for a in self.attributes}
     
-    def ffill(self):
-        for a in self.attributes:
-            if not a in ['volume', 'aq','bq']:
-                getattr(self, a).ffill()
-            else:
-                getattr(self, a).push(0)
-
     def push(self, bar):
         for a, v in list(bar.items()):
             getattr(self, a).push(v)

@@ -61,10 +61,10 @@ class FuturesUniverse(Universe):
         self.futures_meta = self.__get_futures_meta()
         self.calendars = self.__create_calendar()
         self.continuations_meta = self.__get_continuations_meta()
-        self._assets = {k : Future(k, name, bar, v) for k, v in list(self.futures_meta.items())}
-        self.inactive = None
-        self.active = None
-        self.set_active()
+        self.assets = {k : Future(k, name, bar, v) for k, v in list(self.futures_meta.items()) + list(self.continuations_meta.items())}
+        self.tradeable = []
+        self.active_products = {}
+        self.inactive_products = {}
 
     def __get_products_meta(self):
         """returns information for product information"""
@@ -84,7 +84,7 @@ class FuturesUniverse(Universe):
             df['is_synthetic'] = df['is_synthetic'].apply(lambda x: x == 1)
 
         return df.to_dict(orient = 'index')
-    
+   
     def __get_continuations_meta(self):
         """returns the meta information for continuation contracts"""
 
@@ -100,7 +100,7 @@ class FuturesUniverse(Universe):
                 df['is_continuation'] = df['is_continuation'].apply(lambda x: x == 1)
                 df['is_synthetic'] = df['is_synthetic'].apply(lambda x: x == 1)
         else:
-            return None
+            return {}
     
     def __create_calendar(self):
         """creates a expiration calendar that rolls contract on the self.roll_on field"""
@@ -128,22 +128,30 @@ class FuturesUniverse(Universe):
             calendar[product] = sub_df[conts]
         return calendars
                     
-    def set_active(self):
+    def refresh(self):
         """ active contracts returned as dict in format: 
             {
                 product code: {_product_-_period_: contract, ... },
                 ...
             }
         """
-        active_contracts = {}
-        inactive_contracts = {}
+
+        active_products = {}
+        inactive_products = {}
         for product in self.products:
-            active_contracts[product] = self.calendars[product].loc[self.calendars[product].index < self.manager.now].tail(1).to_dict(orient = 'records')[0]
+            active_products[product] = self.calendars[product].loc[self.calendars[product].index < self.manager.now].tail(1).to_dict(orient = 'records')[0]
             inactive_list = list(set(list(self.calendars[product].loc[self.calendars[product].index < self.manager.now].head(-1).values.flatten())))
-            inactive_contracts[product] = [x for x in inactive_list if x not in active_contracts[product].values()]
-        self.active = active_contracts
-        self.inactive = inactive_contracts
+            inactive_products[product] = [x for x in inactive_list if x not in active_products[product].values()]
+
+        tradeable = []
+        for asset in self.assets.values():
+            if asset.tradeable:
+                tradeable.append(asset.identifier)
+
+        self.tradeable = tradeable 
+        self.active_products = active_products
+        self.inactive_products = inactive_products
 
     @property
-    def assets(self):
-        return self._assets
+    def streams(self):
+        return {f: s.price_stream for f, s in self.assets.items()}

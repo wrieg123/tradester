@@ -35,6 +35,8 @@ class Strategy():
         if base == 'bottom_up':
             self.bottom_up._add(Signal(indicator, identifiers, grouping = group, name = name))
         elif base == 'top_down':
+            if not group in self.top_down.keys():
+                self.top_down[group] = IndicatorGroup(group_type = 'dict')
             self.top_down[group].add(indicator, name = name)
         elif base == 'covariance':
             if not name in self.covariance_map.keys():

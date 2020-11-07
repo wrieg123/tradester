@@ -8,14 +8,13 @@ STANDARD_FEES = {
 
 class OMS():
 
-    def __init__(self, adv_participation = .15, adv_period = 21, adv_oi = .05, fee_structure = None):
+    def __init__(self, adv_participation = .10, adv_period = 21, adv_oi = .05, fee_structure = None):
         self.adv_participation = adv_participation
         self.adv_period = adv_period
         self.adv_oi = adv_oi
         self.fee_structure = STANDARD_FEES if fee_structure is None else fee_structure 
         self.portfolio = None 
         self.manager = None
-        self.universes = None
         self._order_num = 1
         self.order_book = {}
         self.order_log = []
@@ -24,10 +23,9 @@ class OMS():
     def order_num(self):
         return self._order_num
         
-    def _connect(self, manager, portfolio, universes):
+    def _connect(self, manager, portfolio)
         self.manager = manager
         self.portfolio = portfolio
-        self.universes = universes
     
     def _remove_from_ob(self, identifier):
         info = self.order_book[identifier].info
@@ -38,29 +36,25 @@ class OMS():
         order.fill(self.manager.now, fill_price, filled_units)
 
         info = order.info
+        asset = order.asset
 
         self._remove_from_ob(info['identifier'])
+
         side = info['side']
-        cost_basis = side * fill_price * filled_units * multiplier
+        cost_basis = side * fill_price * filled_units * multiplier + fees
         fok = info['fok']
 
         if side == 1:
             self.portfolio.buy(
-                    info['id_type'], 
-                    info['identifier'], 
+                    asset,
                     filled_units, 
-                    cost_basis + fees, 
-                    info['universe'],
-                    multiplier
+                    cost_basis
                 )
         elif side == -1:
             self.portfolio.sell(
-                    info['id_type'], 
-                    info['identifier'], 
+                    asset,
                     filled_units, 
-                    cost_basis + fees, 
-                    info['universe'],
-                    multiplier
+                    cost_basis
                 )
         if not fok:
             if filled_units < info['units']:
@@ -75,26 +69,10 @@ class OMS():
                         bands = info['bands']
                     )
 
-    def max_shares(self, id_type, identifier, universe):
-        if self.universes[universe].streams[identifier].volume.pointer == 0:
-            return 0
-        else:
-            adv = self.universes[universe].streams[identifier].volume.ts[-self.adv_period:].mean()
-        
-        if id_type == 'FUT':
-            oi = self.universes[universe].streams[identifier].open_interest.v
-        else:
-            oi = None
-        
-        if not oi is None:
-            if adv is None:
-                return oi * self.adv_oi
-            else:
-                return adv
-        return adv
 
-
-    def place_order(self, side, id_type, identifier, units, universe, time_in_force = None, order_type = 'MARKET', bands = {}, fok = False):
+    def place_order(self, side, asset, units, universe, time_in_force = None, order_type = 'MARKET', bands = {}, fok = False):
+        id_type = asset.id_type
+        identifier = asset.identifier
         if identifier in list(self.order_book.keys()):
             self.order_book[identifier].update(self.manager.now)
             self._remove_from_ob(identifier)
@@ -104,15 +82,23 @@ class OMS():
                 self.order_num, 
                 order_type,
                 universe,
-                id_type,
-                identifier,
+                asset,
                 side,
                 units,
                 self.manager.now, 
-                self.universes[universe].streams[identifier].close.v,
+                asset.price_stream.close.v,
                 bands = bands,
                 fok = fok,
             )
+    
+    def max_shares(self, asset):
+        adv = int(asset.price_stream.volume.ts[-self.adv_period:].mean() * self.adv_participation)
+
+        if asset.id_type == 'FUT':
+            oi = int(asset.price_stream.open_interest.v * self.oi_participation)
+            adv = max(oi, adv)
+
+        return adv
 
 
     def process(self):
@@ -120,6 +106,7 @@ class OMS():
         for identifier, order in list(self.order_book.items()):
             order.bump()
             info = order.info
+            asset = order.asset
             universe = info['universe'] 
             inactive = getattr(self.universes[universe], 'inactive', None)
 
@@ -136,22 +123,19 @@ class OMS():
             id_type = info['id_type']
             fee = self.fee_structure[id_type]
 
-            open = self.universes[universe].streams[identifier].open.v
-            high = self.universes[universe].streams[identifier].high.v
-            low = self.universes[universe].streams[identifier].low.v
-            close = self.universes[universe].streams[identifier].close.v
+            open = asset.price_stream.open.v
+            high = asset.price_stream.high.v
+            low = asset.price_stream.low.v
+            close = asset.price_stream.close.v
 
-            market_value = self.universes[universe].streams[identifier].market_value
-            multiplier = self.universes[universe].active_info[identifier]['multiplier'] if id_type == 'FUT' else 1
-            try:
-                max_shares = int(self.max_shares(id_type, identifier, universe))
-            except:
-                max_shares = 0
+            market_value = asset.price_stream.market_value
+            multiplier = asset.price_stream.multiplier
 
-            filled_units = min(units, max(max_shares, 5))
+            max_shares = self.max_shares(asset)
+
+            filled_units = min(units, max(max_shares, 2))
             order_fill = False
 
-            #def _fill_order(self, order, fill_price, filled_units, multiplier, fees):
             if order_type == 'MARKET':
                 # Market order, drill the close
                 order_fill = True
@@ -201,7 +185,6 @@ class OMS():
                 # trade the avg of the high and low (maybe add in a vwap field in future)
                 order_fill = True
                 self._fill_order(order, (high + low)/2, filled_units, multiplier, fee * filled_units)
-
 
             if not order_fill:
                 if not info['time_in_force'] is None and info['time_in_force'] >= info['days_on']:

@@ -35,8 +35,6 @@ class Metrics():
         self.monthly_returns = None
         self.yearly_returns = None
     
-
-
     def _calculate(self):
         self.holdings = self.portfolio.holdings_df
         self.values = self.portfolio.values_df.set_index('date')

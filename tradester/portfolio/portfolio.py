@@ -73,7 +73,10 @@ class Portfolio():
     def log_trade(self, log):
         self.trading_log.append(log)
 
-    def buy(self, id_type, identifier, units, cost_basis, universe, multiplier):
+    def buy(self, asset, units, cost_basis):
+        id_type = asset.id_type
+        identifier = asset.identifier
+
         if self.print_trades:
             print(self.manager.now, 'BOT', id_type, identifier, round(units), round(cost_basis))
         
@@ -81,14 +84,10 @@ class Portfolio():
 
         if not identifier in self.positions.keys():
             self._positions[identifier] = Position(
-                                            self.universes[universe].streams[identifier],
-                                            id_type,
-                                            identifier, 
-                                            multiplier,
+                                            asset,
                                             1,
                                             units,
-                                            cost_basis,
-                                            universe
+                                            cost_basis
                                         )
         else:
             current = self._positions.pop(identifier).info
@@ -96,16 +95,13 @@ class Portfolio():
             cb_delta = current['cost_basis'] + cost_basis
             
             if current['side'] == -1:
-                avg_px = abs(cost_basis/units/current['multiplier'])
                 trade = {
                     'date': self.manager.now,
                     'id_type': id_type,
                     'identifier': identifier,
                     'side': 1,
-                    'trade_px': avg_px,
-                    'cost_px': abs(current['avg_px']),
-                    'pnl': (abs(current['avg_px']) - avg_px) * units,
-                    'pnl%': (abs(current['avg_px']) / avg_px) - 1,
+                    'gross': cb_delta,
+                    'per contract': cb_delta / units,
                 }
                 self.log_trade(trade)
 
@@ -113,17 +109,16 @@ class Portfolio():
             if pos_delta != 0:
                 side = 1 if pos_delta > 0 else -1
                 self._positions[identifier] = Position(
-                                                self.universes[universe].streams[identifier],
-                                                id_type,
-                                                identifier, 
-                                                multiplier,
+                                                asset,
                                                 side,
                                                 abs(pos_delta),
-                                                cb_delta,
-                                                universe
+                                                cb_delta
                                             )
     
-    def sell(self, id_type, identifier, units, cost_basis, universe, multiplier):
+    def sell(self, asset, units, cost_basis):
+        id_type = asset.id_type
+        identifier = asset.identifier
+
         if self.print_trades:
             print(self.manager.now, 'SLD', id_type, identifier, round(units), round(cost_basis))
         
@@ -131,14 +126,10 @@ class Portfolio():
 
         if not identifier in self.positions.keys():
             self._positions[identifier] = Position(
-                                            self.universes[universe].streams[identifier],
-                                            id_type,
-                                            identifier, 
-                                            multiplier,
+                                            asset,
                                             -1,
                                             units,
                                             cost_basis,
-                                            universe
                                         )
 
         else:
@@ -147,30 +138,23 @@ class Portfolio():
             cb_delta = current['cost_basis'] + cost_basis
             
             if current['side'] == 1:
-                avg_px = abs(cost_basis/units/current['multiplier'])
                 trade = {
                     'date': self.manager.now,
                     'id_type': id_type,
                     'identifier': identifier,
-                    'side': -1,
-                    'trade_px': avg_px,
-                    'cost_px': abs(current['avg_px']),
-                    'pnl': (avg_px - abs(current['avg_px'])) * units,
-                    'pnl%': (avg_px / abs(current['avg_px']))  - 1,
+                    'side': 1,
+                    'gross': cb_delta,
+                    'per contract': cb_delta / units,
                 }
                 self.log_trade(trade)
 
             if pos_delta != 0:
                 side = 1 if pos_delta > 0 else -1
                 self._positions[identifier] = Position(
-                                                self.universes[universe].streams[identifier],
-                                                id_type,
-                                                identifier, 
-                                                multiplier,
+                                                asset,
                                                 side,
                                                 abs(pos_delta),
-                                                cb_delta,
-                                                universe
+                                                cb_delta
                                             )
     
     def reconcile(self):
@@ -180,16 +164,16 @@ class Portfolio():
         short_equity = 0
         pnl = 0
 
-        for identifier, position in list(self.positions.items()):
-            position['date'] = self.manager.now_date,
-            info = position
+        for identifier, position in self_positions.items():
+            asset = position.asset
+
+            info = position.info
+            info['date'] = self.manager.now
             self.holdings.append(info)
 
             pnl += position['pnl']
-            id_type = position['id_type']
-            universe = position['universe']
 
-            if id_type == 'FUT' and identifier in self.universes[universe].inactive:
+            if not asset.tradeable:
                 if self.print_trades:
                     print('SETTLE', identifier, round(position['market_value']))
                 del self._positions[identifier]

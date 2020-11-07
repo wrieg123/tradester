@@ -107,12 +107,6 @@ class Stream():
         if not self.cache is None:
             self._stream = self._stream[-self.cache:]
     
-    def ffill(self):
-        if self._pointer > 0:
-            self._stream.append(self._stream[-1])
-            self._pointer += 1
-        else:
-            pass
 
     def push(self, x):
         if str(x) != 'nan' or not x is None:

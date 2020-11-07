@@ -157,7 +157,7 @@ class Worker():
         self.stream = stream
 
     def check(self):    
-        if not self.stream is None and not self.bar is None:
+        if not self.stream is None and not self.bar is None and not np.isnan(self.bar):
             self.stream.push(self.bar)
 
 
@@ -201,7 +201,7 @@ class WorkerGroup():
         self.start_date = start_date
         self.end_date = end_date
         self.group = {}
-        self.active_group = {}
+        self.active = []
 
     @property 
     def feed_range(self):
@@ -214,8 +214,15 @@ class WorkerGroup():
     
     @property
     def members(self):
-        return list(self.active_group.keys())
+        return list(self.group.keys())
 
     def chunk_up(self, l, n):
         for i in range(0, len(l), n):
             yield l[i:i+n]
+
+    def set_active(self, active):
+        self.active = active
+
+    def check_all(self):
+        for i, f in self.active:
+            f.check()
