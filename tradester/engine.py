@@ -1,4 +1,4 @@
-from tradester.finance.factories import SecuritiesFactory, FuturesFactory, ClockManager
+from tradester.finance.factories import SecuritiesFactory, FuturesFactory, ClockManager, Worker
 
 from .portfolio import Portfolio
 from .metrics import Metrics
@@ -29,7 +29,7 @@ class Engine():
             trade_start_date = None, 
             index = 'SPY'
             ):
-        self.manager = ClockManager()
+        self.manager = Worker(None).manager
         self.starting_cash = starting_cash
         self.management_fee = management_fee
         self.performance_fee = performance_fee

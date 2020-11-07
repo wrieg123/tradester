@@ -157,7 +157,7 @@ class Worker():
         self.stream = stream
 
     def check(self):    
-        if not self.stream is None and not self.bar is None and not np.isnan(self.bar):
+        if not self.stream is None and not self.bar is None:
             self.stream.push(self.bar)
 
 

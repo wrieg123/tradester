@@ -111,8 +111,7 @@ class Stream():
 
     def push(self, x):
         if str(x) != 'nan' or not x is None:
-            self._stream = np.append(self._stream, x)
-            #self._stream.append(x)
+            self._stream.append(x)
             self._pointer += 1
             #self._check_cache()
         else:

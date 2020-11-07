@@ -23,7 +23,6 @@ class SignalGroup():
         for _, l in self.group.items():
             for s in l:
                 for c in s.identifiers:
-                    c = c.identifier
                     ts = s.indicator.ts
                     if c in list(temp_dict.keys()):
                         if isinstance(ts, list):
@@ -72,8 +71,15 @@ class SignalGroup():
         if not signal.identifiers in self.group.keys():
             self.group[signal.identifiers] = []
         self.group[signal.identifiers].append(signal)
-        
-        #self.group.append(signal)
+
+    def _get_signals(self, assets):
+        keys = []
+        for asset in assets:
+            for k in list(self.group.keys()):
+                if asset in k:
+                    keys.append(k)
+        keys = list(set(keys))
+        return keys
 
     def refresh(self, assets = None):
         if assets is None:
@@ -82,12 +88,7 @@ class SignalGroup():
                     i.refresh()
                 #i.refresh()
         else:
-            keys = []
-            for asset in assets:
-                for k in list(self.group.keys()):
-                    if asset in k:
-                        keys.append(k)
-            keys = list(set(keys))
+            keys = self._get_signals(assets)
             for k in keys:
                 for i in self.group[k]:
                     i.refresh()
