@@ -108,7 +108,7 @@ class FuturesFactory(WorkerGroup):
         if len(self.identifiers) > 0:
             print('Initializing feed with',len(self.identifiers), 'identifiers')
             if len(self.identifiers) > 50:
-                for chunk in self.chunk_up(self.identifiers, 50):
+                for chunk in self.chunk_up(self.identifiers, 25):
                     print('Adding in chunk:',chunk[0],'->', chunk[-1])
                     self.add_group(chunk)
             else:
