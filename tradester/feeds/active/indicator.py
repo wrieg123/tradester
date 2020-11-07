@@ -45,8 +45,6 @@ class Indicator():
     
     def calculate(self):
         raise NotImplementedError("For each active indicator, you must implement a calculate(self, data) method")
-alculate(self, data):
-
 
 
 class IndicatorGroup():

@@ -17,17 +17,11 @@ class Metrics():
             trade_start_date, 
             start_date, 
             end_date, 
-            management_fee, 
-            performance_fee, 
-            index = 'SPY'
             ):
         self.portfolio = portfolio
         self.trade_start_date = trade_start_date
         self.start_date = start_date
         self.end_date = end_date
-        self.management_fee = management_fee
-        self.performance_fee = performance_fee
-        self.index_series = SecuritiesTS(index, fields='close', start_date = start_date, end_date = end_date).data
         self.holdings = None
         self.values = None
         self.statistics = None

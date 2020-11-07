@@ -20,14 +20,14 @@ class Asset():
         meta information
     """
 
-    def __init__(id_type, identifier, universe, bar, meta):
+    def __init__(self, id_type, identifier, universe, bar, meta):
         self.id_type = id_type
         self.identifier = identifier
         self.universe = universe
         self.bar = bar
         self.meta = meta
-        self.manager = None
         self.price_stream = Price(bar, cache = None, contract = identifier, multiplier = meta['multiplier'] if 'multiplier' in meta.keys() else 1)
+        self.manager = None
     
     @property
     def tradeable(self):

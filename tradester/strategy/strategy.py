@@ -6,8 +6,8 @@ from .signal import Signal, SignalGroup
 
 class Strategy():
 
-    def __init__(self, universes : dict):
-        self.universes = universes
+    def __init__(self, universes):
+        self.universes = {u.name : u for u in universes}
         self.manager = None
         self.oms = None
         self.portfolio = None

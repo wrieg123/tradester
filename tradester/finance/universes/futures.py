@@ -1,5 +1,5 @@
 from tradester.feeds.static import CustomFeed
-from tradeseter.finance.assets import Future
+from tradester.finance.assets import Future
 
 from .universe import Universe
 
@@ -47,7 +47,7 @@ class FuturesUniverse(Universe):
 
     def __init__(self, name, products, continuation_periods, start_date = None, end_date = None, bar = 'daily', exchange = 'CME', include_continuations = False, include_synthetics = False, roll_on = 'last_trade_date'):
         super().__init__('FUT', name, start_date, end_date)
-        self.products = products,
+        self.products = products
         self.continuation_periods = continuation_periods
         self.start_date = start_date
         self.end_date = end_date
@@ -90,9 +90,9 @@ class FuturesUniverse(Universe):
 
         if self.include_continuations or self.include_synthetics:
             if self.include_continuations and self.include_synthetics:
-                query = f"select * from futures where product in ({str(self.products).strip('[]')}) and is_continuation = True"
+                query = f"select * from futures where product in ({str(self.products).strip('[]')}) and is_continuation = True order by soft_expiry asc"
             else:
-                query = f"select * from futures where product in ({str(self.products).strip('[]')}) and is_continuation = True and is_synthetic = {self.include_synthetics}"
+                query = f"select * from futures where product in ({str(self.products).strip('[]')}) and is_continuation = True and is_synthetic = {self.include_synthetics} order by soft_expiry asc"
             df = CustomFeed(query).data.set_index('contract')
 
             if df.dtypes['is_active'] != bool:
@@ -125,7 +125,7 @@ class FuturesUniverse(Universe):
                 if s_factor != 0:
                     sub_df[cont] = sub_df[f'{product}-1'].shift(-s_factor)
             
-            calendar[product] = sub_df[conts]
+            calendars[product] = sub_df[conts]
         return calendars
                     
     def refresh(self):

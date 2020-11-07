@@ -23,7 +23,7 @@ class OMS():
     def order_num(self):
         return self._order_num
         
-    def _connect(self, manager, portfolio)
+    def _connect(self, manager, portfolio):
         self.manager = manager
         self.portfolio = portfolio
     

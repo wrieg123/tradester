@@ -1,4 +1,4 @@
-from tradester.finance.factories import SecuritiesFactory, FuturesFactory, Worker 
+from tradester.finance.factories import SecuritiesFactory, FuturesFactory, ClockManager
 
 from .portfolio import Portfolio
 from .metrics import Metrics
@@ -29,7 +29,7 @@ class Engine():
             trade_start_date = None, 
             index = 'SPY'
             ):
-        self.manager = Worker(None).manager
+        self.manager = ClockManager()
         self.starting_cash = starting_cash
         self.management_fee = management_fee
         self.performance_fee = performance_fee
@@ -43,33 +43,34 @@ class Engine():
         self.progress_bar = progress_bar if print_trades == False else False
         self.print_trades = print_trades
         self.trade_start_date = trade_start_date
-        self.universes = {}
+        self.universes = {} 
         self.feed_factories = {}
         self.portfolio = Portfolio(starting_cash, print_trades = print_trades)
         self.oms = OMS(adv_participation = adv_participation, adv_period = adv_period, adv_oi = adv_oi)
-        self.metrics = Metrics(self.portfolio, trade_start_date, start_date, end_date, management_fee, performance_fee, index = index)
+        self.metrics = Metrics(self.portfolio, trade_start_date, start_date, end_date)
         self.strategy = None
 
 
     def set_universes(self, universes):
-        self.universes = universes
+        self.universes = {u.name : u for u in universes}
         master_feed_range = []
 
-        for name, universe in list(self.universes.items()):
+        for universe in self.universes.values():
+            name = universe.name
             universe.set_manager(self.manager)
             
             if self.bulk_load:
                 print('Bulk loading tradeable securities and futures')
                 if universe.id_type == 'FUT':
                     self.feed_factories[name] = FuturesFactory(
-                               universe.continuations + list(universe.futures_meta.keys()),
+                               list(universe.assets.keys()),
                                start_date = self.start_date,
                                end_date = self.end_date,
                                cache = self.cache
                             )
                 elif universe.id_type == 'SEC':
                     self.feed_factories[name] = SecuritiesFactory(
-                                universe.tickers,
+                                list(universe.assets.keys()),
                                 start_date = self.start_date,
                                 end_date = self.end_date,
                                 cache = self.cache
@@ -77,8 +78,8 @@ class Engine():
                 self.feed_factories[name].set_streams(universe.streams)
                 master_feed_range +=  self.feed_factories[name].feed_range
 
-        self.portfolio._connect(self.manager, self.universes)
-        self.oms._connect(self.manager, self.portfolio, self.universes)
+        self.portfolio._connect(self.manager)
+        self.oms._connect(self.manager, self.portfolio)
 
         master_feed_range = list(set(master_feed_range))
         master_feed_range.sort()

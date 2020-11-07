@@ -5,5 +5,5 @@ setup(
     version= '0.0.1',
     description= 'Python based futures and securities backtesting engine',
     packages = find_packages(),
-
+    tests = 'tests/',
     )

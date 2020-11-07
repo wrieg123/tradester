@@ -13,7 +13,6 @@ class Portfolio():
         self._short_equity = 0
         self._pnl = 0
         self.manager = None
-        self.universes = None
         self._positions = {}
         self.values = []
         self.holdings = []
@@ -66,9 +65,8 @@ class Portfolio():
     def trading_log_df(self):
         return pd.DataFrame(self.trading_log)
 
-    def _connect(self, manager, universes):
+    def _connect(self, manager):
         self.manager = manager
-        self.universes = universes
     
     def log_trade(self, log):
         self.trading_log.append(log)

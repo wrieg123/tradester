@@ -8,10 +8,10 @@ import numpy as np
 
 
 
-def ClockManager():
+class ClockManager():
 
     """
-    FeedManager is a central 'clock' to control aspects of iterating through time.
+    ClockManager is a central 'clock' to control aspects of iterating through time.
 
     ...
     
