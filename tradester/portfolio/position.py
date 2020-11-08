@@ -21,7 +21,7 @@ class Position():
 
     @property
     def avg_px(self):
-        return self.cost_basis / self.multiplier / self.units
+        return abs(self.cost_basis) / self.multiplier / self.units
     
     @property
     def info(self):
@@ -37,4 +37,3 @@ class Position():
             'avg_px': self.avg_px,
             'last': self.asset.price_stream.close.v,
         }
-

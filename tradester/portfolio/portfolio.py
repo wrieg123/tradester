@@ -74,6 +74,7 @@ class Portfolio():
     def buy(self, asset, units, cost_basis):
         id_type = asset.id_type
         identifier = asset.identifier
+        multiplier = asset.meta['multiplier']
 
         if self.print_trades:
             print(self.manager.now, 'BOT', id_type, identifier, round(units), round(cost_basis))
@@ -91,15 +92,19 @@ class Portfolio():
             current = self._positions.pop(identifier).info
             pos_delta = (current['side']*current['units']) + units
             cb_delta = current['cost_basis'] + cost_basis
-            
+
+            current_avg = current['avg_px']
+            new_avg = cost_basis / multiplier / units
+
             if current['side'] == -1:
+                us = min(current['units'], units)
                 trade = {
                     'date': self.manager.now,
                     'id_type': id_type,
                     'identifier': identifier,
                     'side': 1,
-                    'gross': cb_delta,
-                    'per contract': cb_delta / units,
+                    'gross': (new_avg - current_avg) * multiplier * us * current['side'],
+                    'per contract': (new_avg - current_avg) * multiplier * current['side']
                 }
                 self.log_trade(trade)
 
@@ -116,6 +121,7 @@ class Portfolio():
     def sell(self, asset, units, cost_basis):
         id_type = asset.id_type
         identifier = asset.identifier
+        multiplier = asset.meta['multiplier']
 
         if self.print_trades:
             print(self.manager.now, 'SLD', id_type, identifier, round(units), round(cost_basis))
@@ -135,14 +141,18 @@ class Portfolio():
             pos_delta = (current['side']*current['units']) - units 
             cb_delta = current['cost_basis'] + cost_basis
             
+            current_avg = current['avg_px']
+            new_avg = abs(cost_basis) / multiplier / units
+
             if current['side'] == 1:
+                us = min(current['units'], units)
                 trade = {
                     'date': self.manager.now,
                     'id_type': id_type,
                     'identifier': identifier,
                     'side': 1,
-                    'gross': cb_delta,
-                    'per contract': cb_delta / units,
+                    'gross': (new_avg - current_avg) * multiplier * us * current['side'],
+                    'per contract': (new_avg - current_avg) * multiplier * current['side']
                 }
                 self.log_trade(trade)
 

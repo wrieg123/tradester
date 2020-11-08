@@ -42,7 +42,7 @@ class Engine():
         self.feed_factories = {}
         self.portfolio = Portfolio(starting_cash, print_trades = print_trades)
         self.oms = OMS(adv_participation = adv_participation, adv_period = adv_period, adv_oi = adv_oi)
-        self.metrics = Metrics(self.portfolio, trade_start_date, start_date, end_date)
+        self.metrics = Metrics(self.portfolio, self.oms, trade_start_date, start_date, end_date)
         self.strategy = None
 
 
@@ -86,7 +86,7 @@ class Engine():
         self.strategy._connect(self.manager, self.oms, self.portfolio)
         self.strategy.initialize()
     
-    def run(self, plot = True, fast_forward = False, index = True):
+    def run(self, plot = True, fast_forward = False):
 
         print('Running backtest...')
         print(f'Starting value: ${self.starting_cash:,.0f}')
@@ -99,6 +99,7 @@ class Engine():
         while cont:
             now = time.time()
             self.manager.update()
+
             if self.manager.now != 'END':
                 if self.print_trades:
                     print()
@@ -134,6 +135,6 @@ class Engine():
 
         self.metrics._calculate()
 
+        self.metrics.print()
         if plot:
-            self.metrics._print()
-            self.metrics.plot(index = index)
+            self.metrics.plot()
