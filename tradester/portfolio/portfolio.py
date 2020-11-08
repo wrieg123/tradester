@@ -162,25 +162,25 @@ class Portfolio():
         short_equity = 0
         pnl = 0
 
-        for identifier, position in self._positions.items():
+        for identifier, position in list(self._positions.items()):
             asset = position.asset
 
             info = position.info
             info['date'] = self.manager.now
             self.holdings.append(info)
 
-            pnl += position['pnl']
+            pnl += info['pnl']
 
             if not asset.tradeable:
                 if self.print_trades:
-                    print('SETTLE', identifier, round(position['market_value']))
+                    print('SETTLE', identifier, info['units'] * info['side'], round(info['market_value']))
                 del self._positions[identifier]
-                self._cash += position['market_value']
+                self._cash += info['market_value']
             else:
                 if info['side'] == 1:
-                    long_equity += position['market_value']
+                    long_equity += info['market_value']
                 else:
-                    short_equity += position['market_value']
+                    short_equity += info['market_value']
 
         self._long_equity = long_equity
         self._short_equity = short_equity

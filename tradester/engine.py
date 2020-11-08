@@ -14,25 +14,20 @@ class Engine():
 
     def __init__(
             self, 
-            starting_cash = 10000000, 
-            management_fee = 0.01,
-            performance_fee = 0.3,
+            starting_cash = 1000000, 
             start_date = None, 
             end_date = None, 
             bulk_load = True, 
             cache = None, 
-            adv_participation = .2, 
+            adv_participation = .1, 
             adv_period = 21, 
             adv_oi = 0.05, 
             progress_bar = True, 
             print_trades = False, 
             trade_start_date = None, 
-            index = 'SPY'
             ):
         self.manager = Worker(None).manager
         self.starting_cash = starting_cash
-        self.management_fee = management_fee
-        self.performance_fee = performance_fee
         self.start_date = start_date
         self.end_date = end_date
         self.bulk_load = bulk_load

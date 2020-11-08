@@ -17,11 +17,21 @@ class SignalGroup():
     def __init__(self):
         self.group = {}
 
-    @property
-    def vector_space(self):
+    def _get_signals(self, assets):
+        if assets is None:
+            return list(self.group.keys())
+        keys = []
+        for asset in assets:
+            for k in list(self.group.keys()):
+                if asset in k:
+                    keys.append(k)
+        keys = list(set(keys))
+        return keys
+
+    def get_indicators(self, assets = None):
         temp_dict = {}
-        for _, l in self.group.items():
-            for s in l:
+        for k in self._get_signals(assets):
+            for s in self.group[k]:
                 for c in s.identifiers:
                     ts = s.indicator.ts
                     if c in list(temp_dict.keys()):
@@ -42,12 +52,12 @@ class SignalGroup():
                             temp_dict[c] = [ts]
                     
         return {k : np.column_stack(v) for k, v in list(temp_dict.items())}
+
    
-    @property
-    def full_vector_space(self):
+    def get_indicator_tree(self, asset = None):
         temp_dict = {}
-        for _, l in self.group.items():
-            for s in l:
+        for k in self._get_signals(assets):
+            for s in self.group[k]:
                 g = s.grouping if s.grouping is not None else 'None'
                 name = s.indicator_name
                 ts = s.indicator.ts
@@ -67,30 +77,14 @@ class SignalGroup():
 
         return temp_dict
 
+
     def _add(self, signal : Signal):
         if not signal.identifiers in self.group.keys():
             self.group[signal.identifiers] = []
         self.group[signal.identifiers].append(signal)
 
-    def _get_signals(self, assets):
-        keys = []
-        for asset in assets:
-            for k in list(self.group.keys()):
-                if asset in k:
-                    keys.append(k)
-        keys = list(set(keys))
-        return keys
 
     def refresh(self, assets = None):
-        if assets is None:
-            for _, l in self.group.items():
-                for i in l:
-                    i.refresh()
-                #i.refresh()
-        else:
-            keys = self._get_signals(assets)
-            for k in keys:
-                for i in self.group[k]:
-                    i.refresh()
-        #for i in self.group:
-        #    i.refresh()
+        for k in self._get_signals(assets):
+            for i in self.group[k]:
+                i.refresh()

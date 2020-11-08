@@ -56,12 +56,12 @@ class OMS():
                     filled_units, 
                     cost_basis
                 )
+
         if not fok:
             if filled_units < info['units']:
                 self.place_order(
                         side, 
-                        info['id_type'], 
-                        info['identifier'], 
+                        asset,
                         info['units'] - filled_units, 
                         time_in_force = info['time_in_force'],
                         order_type = info['order_type'],
@@ -94,7 +94,7 @@ class OMS():
         adv = int(asset.price_stream.volume.ts[-self.adv_period:].mean() * self.adv_participation)
 
         if asset.id_type == 'FUT':
-            oi = int(asset.price_stream.open_interest.v * self.oi_participation)
+            oi = int(asset.price_stream.open_interest.v * self.adv_oi)
             adv = max(oi, adv)
 
         return adv

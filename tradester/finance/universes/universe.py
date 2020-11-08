@@ -30,9 +30,6 @@ class Universe():
     set_manager(manager : FeedManager)
         sets self.manager
     
-    See Also
-    --------
-    etl.feeds.active.FeedManager
     """
 
     def __init__(self, id_type, name, start_date, end_date):

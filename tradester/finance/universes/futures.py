@@ -63,6 +63,8 @@ class FuturesUniverse(Universe):
         self.continuations_meta = self.__get_continuations_meta()
         self.assets = {k : Future(k, name, bar, v) for k, v in list(self.futures_meta.items()) + list(self.continuations_meta.items())}
         self.tradeable = []
+        self.active_list = []
+        self.inactive_list = []
         self.active_products = {}
         self.inactive_products = {}
 
@@ -139,10 +141,14 @@ class FuturesUniverse(Universe):
 
         active_products = {}
         inactive_products = {}
+        active_list = []
+        inactive_list = [] 
         for product in self.products:
             active_products[product] = self.calendars[product].loc[self.calendars[product].index > self.manager.now].head(1).to_dict(orient = 'records')[0]
-            #inactive_list = list(set(list(self.calendars[product].loc[self.calendars[product].index < self.manager.now].tail(-1).values.flatten())))
-            #inactive_products[product] = [x for x in inactive_list if x not in active_products[product].values()]
+            i_list = list(set(list(self.calendars[product].loc[self.calendars[product].index < self.manager.now, f'{product}-1'].tail(-1).values.flatten())))
+            inactive_products[product] = [x for x in i_list if x not in active_products[product].values()]
+            inactive_list += i_list
+            active_list += list(active_products[product].values())
 
         tradeable = []
         for asset in self.assets.values():
@@ -152,6 +158,8 @@ class FuturesUniverse(Universe):
         self.tradeable = tradeable 
         self.active_products = active_products
         self.inactive_products = inactive_products
+        self.active_list = active_list
+        self.inactive_list = inactive_list
 
     @property
     def streams(self):

@@ -18,7 +18,32 @@ class Strategy():
                 }
         self.covariance_map = { }
         self.bottom_up = SignalGroup()
-        
+    
+    @property
+    def active_assets(self):
+        assets = []
+        for u in self.universes.values():
+            for a in u.active_list:
+                assets.append(a)
+        return assets
+    
+    @property
+    def tradeable_assets(self):
+        assets = []
+        for u in self.universes.values():
+            for a in u.tradeable:
+                assets.append(a)
+        return assets
+
+    @property
+    def inactive_assets(self):
+        assets = []
+        for u in self.universes.values():
+            for a in u.inactive_list:
+                assets.append(a)
+        return assets
+
+
     def _connect(self, manager, oms, portfolio):
         self.manager = manager
         self.oms = oms
@@ -62,4 +87,4 @@ class Strategy():
             delta = info['delta']
 
             if delta != 0 and not c is None:
-                self.oms.place_order(1 if delta > 0 else -1, asset, delta)
+                self.oms.place_order(1 if delta > 0 else -1, asset, abs(delta))

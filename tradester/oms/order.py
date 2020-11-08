@@ -2,7 +2,7 @@
 
 class Order():
     
-    def __init__(self, num, order_type, asset, identifier, side, units, entry_date, entry_price, time_in_force = None, bands = {}, fok = False):
+    def __init__(self, num, order_type, asset, side, units, entry_date, entry_price, time_in_force = None, bands = {}, fok = False):
         self.status = 'PLACED'
         self.num = num
         self.order_type = order_type
