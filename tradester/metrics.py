@@ -172,6 +172,8 @@ class Metrics():
         print('----- Yearly Returns ------')
         print(printable_y)
 
+    def save(self, path, sheet_name = None):
+        pass
 
     def plot(self, plot_type = '$'):
         fig = plt.figure()
@@ -185,8 +187,9 @@ class Metrics():
         ax1b.set_ylabel("Cumulative Performance ($1 invested)")
         ax1.set_ylabel("Portfolio Positioning (%)")
         ax2.set_title("Distribution of Trade PnL")
-        ax2.set_ylabel("PnL ($)")
+        ax2.set_xlabel("PnL ($)")
         ax3.set_title("Cumlative Return YoY")
+        ax3.set_xlabel("Days in Year")
 
         # Graph 1: Performance and positioning
         ax1.plot(self.values.index.values, self.values['Long Market Value'].values, color = 'green', alpha = 0.5, label = 'Long Market Value')
@@ -208,13 +211,18 @@ class Metrics():
         s_m.set_array([])
 
         if plot_type == '$':
-            ax3.set_ylabel("PnL ($)")
+            ax3.set_ylabel("PnL ($1,000s)")
+            ax3.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda x, pos: f'{x:,.0f}'))
             for year in years:
-                ax3.plot(self.ts_yearly_returns_usd[year], color = s_m.to_rgba(year))
+                ax3.plot(self.ts_yearly_returns_usd[year] / 1000, color = s_m.to_rgba(year))
         elif plot_type == '%':
             ax3.set_ylabel("PnL (%)")
+            ax3.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda x, pos: f'{x:.1f}%'))
             for year in years:
-                ax3.plot(self.ts_yearly_returns_pct[year], color = s_m.to_rgba(year))
+                ax3.plot(self.ts_yearly_returns_pct[year]*100, color = s_m.to_rgba(year))
+        temp = pd.DataFrame(index = self.ts_yearly_returns_usd.index)
+        temp['0'] = 0
+        ax3.plot(temp['0'], color = 'black')
 
         fig.suptitle("Backtest Graphs")
         ax1.legend()

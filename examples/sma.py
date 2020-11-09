@@ -4,7 +4,7 @@ from tradester import Engine, Indicator, FuturesUniverse, Strategy
 
 class SMA(Indicator):
 
-    def __init__(self, asset, period = 80):
+    def __init__(self, asset, period = 21):
         super().__init__(asset)
         self.period = period
     
@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
 
     universes = [
-                FuturesUniverse('Brent', ['BZ'], (1,5)),
+                FuturesUniverse('Soy', ['BZ'], (1,2)),
                 ]
     
     strat = Strat(universes)
