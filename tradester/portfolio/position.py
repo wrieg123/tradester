@@ -2,7 +2,7 @@
 
 class Position():
 
-    def __init__(self, asset, side, units, cost_basis):
+    def __init__(self, asset, side, units, cost_basis, avg_px):
         self.asset = asset
         self.id_type = asset.id_type
         self.identifier = asset.identifier
@@ -10,6 +10,7 @@ class Position():
         self.side = side
         self.units = units
         self.cost_basis = cost_basis
+        self.avg_px = avg_px
     
     @property
     def market_value(self):
@@ -19,10 +20,6 @@ class Position():
     def pnl(self):
         return self.market_value - self.cost_basis
 
-    @property
-    def avg_px(self):
-        return abs(self.cost_basis) / self.multiplier / self.units
-    
     @property
     def info(self):
         return {

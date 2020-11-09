@@ -1,5 +1,6 @@
 from tradester.feeds.static import SecuritiesTS
 
+from matplotlib.gridspec import GridSpec
 from tqdm import tqdm
 
 import matplotlib.pyplot as plt
@@ -76,22 +77,26 @@ class Metrics():
         
         if not self.trading_log is None and not self.trading_log.empty:
             stats['Trade num'] = len(self.trading_log.index)
-            stats['Trade Win Rate'] = self.trading_log['per contract'].map(lambda x: 1 if x > 0 else 0).sum() / stats['Trade num']
-            stats['Trade Loss Rate'] = self.trading_log['per contract'].map(lambda x: 1 if x < 0 else 0).sum() / stats['Trade num']
-            stats['Trade Pass Rate'] = self.trading_log['per contract'].map(lambda x: 1 if x == 0 else 0).sum() / stats['Trade num']
-            stats['Trade Win Avg (per contract)'] = self.trading_log.loc[self.trading_log['per contract'] > 0]['per contract'].mean()
-            stats['Trade Win Std (per contract)'] = self.trading_log.loc[self.trading_log['per contract'] > 0]['per contract'].std()
-            stats['Trade Loss Avg (per contract)'] = self.trading_log.loc[self.trading_log['per contract'] < 0]['per contract'].mean()
-            stats['Trade Loss Std (per contract)'] = self.trading_log.loc[self.trading_log['per contract'] < 0]['per contract'].std()
+            stats['Trade Win Rate'] = self.trading_log['%c'].map(lambda x: 1 if x > 0 else 0).sum() / stats['Trade num']
+            stats['Trade Loss Rate'] = self.trading_log['%c'].map(lambda x: 1 if x < 0 else 0).sum() / stats['Trade num']
+            stats['Trade Pass Rate'] = self.trading_log['%c'].map(lambda x: 1 if x == 0 else 0).sum() / stats['Trade num']
+            stats['Trade Win Avg (%c)'] = self.trading_log.loc[self.trading_log['%c'] > 0]['%c'].mean()
+            stats['Trade Win Std (%c)'] = self.trading_log.loc[self.trading_log['%c'] > 0]['%c'].std()
+            stats['Trade Loss Avg (%c)'] = self.trading_log.loc[self.trading_log['%c'] < 0]['%c'].mean()
+            stats['Trade Loss Std (%c)'] = self.trading_log.loc[self.trading_log['%c'] < 0]['%c'].std()
+            stats['Trade Win Expected'] = stats['Trade Win Rate'] * stats['Trade Win Avg (%c)']
+            stats['Trade Loss Expected'] = stats['Trade Loss Rate'] * stats['Trade Loss Avg (%c)']
         else:
             stats['Trade num'] = 0
             stats['Trade Win Rate'] = 0
             stats['Trade Loss Rate'] = 0
             stats['Trade Pass Rate'] = 0
-            stats['Trade Win Avg (per contract)'] = 0
-            stats['Trade Win Std (per contract)'] = 0
-            stats['Trade Loss Avg (per contract)'] = 0
-            stats['Trade Loss Std (per contract)'] = 0
+            stats['Trade Win Avg (%c)'] = 0
+            stats['Trade Win Std (%c)'] = 0
+            stats['Trade Loss Avg (%c)'] = 0
+            stats['Trade Loss Std (%c)'] = 0
+            stats['Trade Win Expected'] = stats['Trade Win Rate'] * stats['Trade Win Avg (%c)']
+            stats['Trade Loss Expected'] = stats['Trade Loss Rate'] * stats['Trade Loss Avg (%c)']
 
         self.statistics = stats
    
@@ -122,6 +127,7 @@ class Metrics():
         grouped_y_returns_usd = self.values[['$', 'year']].groupby('year').apply(lambda x: x.sum()) 
         grouped_y_returns_usd.index = grouped_y_returns_usd.index.year
         grouped_y_returns['PnL'] = grouped_y_returns_usd['$']
+        grouped_y_returns.loc['mean'] = grouped_y_returns.mean()
 
         return grouped_m_returns_pct, grouped_m_returns_usd, grouped_y_returns
 
@@ -129,7 +135,7 @@ class Metrics():
     def print(self):
         print()
         print(f'----- Portfolio Statistics -----')
-        print(f"Cumulative Return: ${self.statistics['Cumulative Return ($)']:,.0f} ({self.statistics['Cumulative Return (%)']:.2f}%)")
+        print(f"Cumulative Return: ${self.statistics['Cumulative Return ($)']:,.0f} ({self.statistics['Cumulative Return (%)']*100:.2f}%)")
         print(f"Annualized Return: {self.statistics['Annualized Return (%)']*100:.2f}%")
         print(f"Annualized Volatility: {self.statistics['Annualized Volatility (%)']*100:.2f}%")
         print(f"Sharpe Ratio: {self.statistics['Sharpe Ratio']:.2f}")
@@ -139,21 +145,47 @@ class Metrics():
         print()
         print('----- Trades -----')
         print(f"Total Trades: {self.statistics['Trade num']}")
-        print(f"Win Rate: {self.statistics['Trade Win Rate']*100:.2f}% (avg: ${self.statistics['Trade Win Avg (per contract)']:,.2f}, std: ${self.statistics['Trade Win Std (per contract)']:,.2f})")
-        print(f"Loss Rate: {self.statistics['Trade Loss Rate']*100:.2f}% (avg: ${self.statistics['Trade Loss Avg (per contract)']:,.2f}, std: ${self.statistics['Trade Loss Std (per contract)']:,.2f})")
-        print(f"Pass Rate: {self.statistics['Trade Pass Rate']*100:.2f}%")
+        print(f"Win Rate: {self.statistics['Trade Win Rate']*100:.1f}% (avg: {self.statistics['Trade Win Avg (%c)']*100:,.1f}%, std: {self.statistics['Trade Win Std (%c)']*100:,.1f}%)")
+        print(f"Loss Rate: {self.statistics['Trade Loss Rate']*100:.1f}% (avg: {self.statistics['Trade Loss Avg (%c)']*100:,.1f}%, std: {self.statistics['Trade Loss Std (%c)']*100:,.1f}%)")
+        print(f"Pass Rate: {self.statistics['Trade Pass Rate']*100:.1f}%")
+        print(f"E(Win): {self.statistics['Trade Win Expected']*100:,.1f}%")
+        print(f"E(Loss): {self.statistics['Trade Loss Expected']*100:,.1f}%")
         #print() 
         #print('----- Monthly Returns -----')
         #print(self.monthly_returns_pct.applymap(lambda x: '' if np.isnan(x) else f'{round(x*100,1)}%'))
         printable_y = self.yearly_returns[['Return', 'Volatility']]
         printable_y = printable_y.applymap(lambda x: '' if np.isnan(x) else f'{round(x*100,1)}%')
         printable_y['Sharpe'] = self.yearly_returns['Sharpe'].apply(lambda x: '' if np.isnan(x) else f'{round(x,2)}')
-        printable_y['PnL'] = self.yearly_returns['PnL'].apply(lambda x: '' if np.isnan(x) else f'{x:,.0f}')
+        printable_y['P&L ($)'] = self.yearly_returns['PnL'].apply(lambda x: '' if np.isnan(x) else f'{x:,.0f}')
         print()
         print('----- Yearly Returns ------')
         print(printable_y)
-        print(self.yearly_returns.mean())
 
 
-    def plot(self):
-        pass
+    def plot(self, plot_type = '%'):
+        fig = plt.figure()
+        gs = GridSpec(2, 2, figure =fig)
+        ax1 = fig.add_subplot(gs[0,:])
+        ax1b = ax1.twinx()
+        ax2 = fig.add_subplot(gs[1, 0])
+        ax3 = fig.add_subplot(gs[1, 1])
+        
+        ax1.set_title("Strategy Performance Characteristics")
+        ax1.set_ylabel("Positioning (% of Capital)")
+        ax1b.set_ylabel("Cumulative Return (%)")
+        ax2.set_title("Distribution of Trade PnL")
+        ax2.set_ylabel("PnL ($)")
+        ax3.set_title("Cumlative Return YoY")
+
+        self.values['lmv%'].plot(ax = ax1, color = 'green', alpha = 0.5)
+        self.values['smv%'].plot(ax = ax1, color = 'red', alpha = 0.5)
+        self.values['nmv%'].plot.area(ax = ax1, color = 'blue', alpha = 0.25, stacked = False)
+        self.values['cumulative'].plot(ax = ax1b, color = 'black')
+
+        self.trading_log.loc[self.trading_log['gross'] > 0, 'gross'].hist(ax = ax2, color = 'green', bins = 50)
+        self.trading_log.loc[self.trading_log['gross'] < 0, 'gross'].hist(ax = ax2, color = 'red', bins = 50)
+
+        fig.suptitle("Backtest Graphs")
+        ax1.legend()
+        
+        plt.show()

@@ -86,7 +86,8 @@ class Portfolio():
                                             asset,
                                             1,
                                             units,
-                                            cost_basis
+                                            cost_basis,
+                                            cost_basis / multiplier / units
                                         )
         else:
             current = self._positions.pop(identifier).info
@@ -103,6 +104,7 @@ class Portfolio():
                     'id_type': id_type,
                     'identifier': identifier,
                     'side': 1,
+                    '%c': (new_avg / current_avg -1)*current['side'],
                     'gross': (new_avg - current_avg) * multiplier * us * current['side'],
                     'per contract': (new_avg - current_avg) * multiplier * current['side']
                 }
@@ -115,7 +117,8 @@ class Portfolio():
                                                 asset,
                                                 side,
                                                 abs(pos_delta),
-                                                cb_delta
+                                                cb_delta,
+                                                new_avg if side != current['side'] else (cost_basis + current['cost_basis']) / multiplier / pos_delta
                                             )
     
     def sell(self, asset, units, cost_basis):
@@ -134,6 +137,7 @@ class Portfolio():
                                             -1,
                                             units,
                                             cost_basis,
+                                            abs(cost_basis) / multiplier / units
                                         )
 
         else:
@@ -151,6 +155,7 @@ class Portfolio():
                     'id_type': id_type,
                     'identifier': identifier,
                     'side': 1,
+                    '%c': (new_avg / current_avg -1)*current['side'],
                     'gross': (new_avg - current_avg) * multiplier * us * current['side'],
                     'per contract': (new_avg - current_avg) * multiplier * current['side']
                 }
@@ -162,7 +167,8 @@ class Portfolio():
                                                 asset,
                                                 side,
                                                 abs(pos_delta),
-                                                cb_delta
+                                                cb_delta,
+                                                new_avg if side != current['side'] else (cost_basis + current['cost_basis']) / multiplier / pos_delta
                                             )
     
     def reconcile(self):
@@ -184,8 +190,20 @@ class Portfolio():
             if not asset.tradeable:
                 if self.print_trades:
                     print('SETTLE', identifier, info['units'] * info['side'], round(info['market_value']))
+
                 del self._positions[identifier]
                 self._cash += info['market_value']
+                new_avg = abs(info['market_value']) / info['multiplier'] / info['units']
+                trade = {
+                    'date': self.manager.now,
+                    'id_type': asset.id_type,
+                    'identifier': asset.identifier,
+                    'side': 1,
+                    '%c': (new_avg / info['avg_px']-1)*info['side'],
+                    'gross': (new_avg - info['avg_px']) * info['multiplier'] * info['units'] * info['side'],
+                    'per contract': (new_avg - info['avg_px']) * info['multiplier'] * info['side']
+                }
+                self.log_trade(trade)
             else:
                 if info['side'] == 1:
                     long_equity += info['market_value']
