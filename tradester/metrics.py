@@ -4,6 +4,7 @@ from matplotlib.gridspec import GridSpec
 from tqdm import tqdm
 
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import pandas as pd
 import numpy as np
 import calendar
@@ -33,6 +34,8 @@ class Metrics():
         self.monthly_returns_pct = None
         self.monthly_returns_usd = None
         self.yearly_returns = None
+        self.ts_yearly_returns_usd = None
+        self.ts_yearly_returns_pct = None
     
 
     def _calculate(self):
@@ -48,10 +51,10 @@ class Metrics():
         self.values['expanding_max'] = self.values['value'].expanding().max()
         self.values['dd_%'] = (self.values['value'] / self.values['expanding_max'] - 1).apply(lambda x: 0 if x > 0 else x)
         self.values['dd_$'] = (self.values['value'] - self.values['expanding_max']).apply(lambda x: 0 if x > 0 else x)
-        self.values['lmv%'] = self.values['long_equity'] / self.values['value']
-        self.values['smv%'] = self.values['short_equity'] / self.values['value']
-        self.values['nmv%'] = self.values['lmv%'] + self.values['smv%'] 
-        self.values['gmv%'] = self.values['lmv%'] - self.values['smv%'] 
+        self.values['Long Market Value'] = self.values['long_equity'] / self.values['value']
+        self.values['Short Market Value'] = self.values['short_equity'] / self.values['value']
+        self.values['Net Market Value'] = self.values['Long Market Value'] + self.values['Short Market Value'] 
+        self.values['Gross Market Value'] = self.values['Long Market Value'] - self.values['Short Market Value'] 
         self.values['cash%'] = self.values['cash']/self.values['value'] - 1
         self.values['%'] = self.values['value'].pct_change().fillna(0)
         self.values['$'] = self.values['value'].diff().fillna(0)
@@ -60,8 +63,9 @@ class Metrics():
         self.values['date'] = self.values['date'].apply(lambda x: x.strftime('%Y-%m-%d'))
         self.values['year-month'] = self.values['date'].apply(lambda x: pd.to_datetime(f'{x.split("-")[0]}' +'-'+ f'{x.split("-")[1]}'+'-01'))
         self.values['year'] = self.values['date'].apply(lambda x: pd.to_datetime(f'{x.split("-")[0]}'+'-01-01'))
+        self.values['day_of_year'] = self.values['date'].apply(lambda x: pd.to_datetime(x).timetuple().tm_yday)
 
-        self.monthly_returns_pct, self.monthly_returns_usd, self.yearly_returns = self.__group_returns()
+        self.monthly_returns_pct, self.monthly_returns_usd, self.yearly_returns, self.ts_yearly_returns_usd, self.ts_yearly_returns_pct = self.__group_returns()
 
         stats = {}
         
@@ -129,7 +133,14 @@ class Metrics():
         grouped_y_returns['PnL'] = grouped_y_returns_usd['$']
         grouped_y_returns.loc['mean'] = grouped_y_returns.mean()
 
-        return grouped_m_returns_pct, grouped_m_returns_usd, grouped_y_returns
+        grouped_y_ts_returns_usd = self.values.pivot_table(index = 'day_of_year', columns = 'year', values='$').fillna(0)
+        grouped_y_ts_returns_pct = self.values.pivot_table(index = 'day_of_year', columns = 'year', values='%').fillna(0)
+        grouped_y_ts_returns_usd.columns = [x.year for x in grouped_y_ts_returns_usd.columns]
+        grouped_y_ts_returns_pct.columns = [x.year for x in grouped_y_ts_returns_pct.columns]
+        grouped_y_ts_returns_usd = grouped_y_ts_returns_usd.cumsum()
+        grouped_y_ts_returns_pct = (1+grouped_y_ts_returns_pct).cumprod()-1
+
+        return grouped_m_returns_pct, grouped_m_returns_usd, grouped_y_returns, grouped_y_ts_returns_usd, grouped_y_ts_returns_pct
 
 
     def print(self):
@@ -162,7 +173,7 @@ class Metrics():
         print(printable_y)
 
 
-    def plot(self, plot_type = '%'):
+    def plot(self, plot_type = '$'):
         fig = plt.figure()
         gs = GridSpec(2, 2, figure =fig)
         ax1 = fig.add_subplot(gs[0,:])
@@ -177,15 +188,36 @@ class Metrics():
         ax2.set_ylabel("PnL ($)")
         ax3.set_title("Cumlative Return YoY")
 
-        self.values['lmv%'].plot(ax = ax1, color = 'green', alpha = 0.5)
-        self.values['smv%'].plot(ax = ax1, color = 'red', alpha = 0.5)
-        self.values['nmv%'].plot.area(ax = ax1, color = 'blue', alpha = 0.25, stacked = False)
+        # Graph 1: Performance and positioning
+        self.values['Long Market Value'].plot(ax = ax1, color = 'green', alpha = 0.5)
+        self.values['Short Market Value'].plot(ax = ax1, color = 'red', alpha = 0.5)
+        self.values['Net Market Value'].plot.area(ax = ax1, color = 'blue', alpha = 0.25, stacked = False)
         self.values['cumulative'].plot(ax = ax1b, color = 'black')
 
+        # Graph 2: Distribution of Trade PnL
         self.trading_log.loc[self.trading_log['gross'] > 0, 'gross'].hist(ax = ax2, color = 'green', bins = 50)
         self.trading_log.loc[self.trading_log['gross'] < 0, 'gross'].hist(ax = ax2, color = 'red', bins = 50)
 
+        # Graph 3: Yearly Returns by either % or $
+
+        years = self.ts_yearly_returns_usd.columns
+
+        norm = mpl.colors.Normalize(vmin = min(years), vmax = max(years))
+        c_m = mpl.cm.Blues
+
+        s_m = mpl.cm.ScalarMappable(cmap = c_m, norm = norm)
+        s_m.set_array([])
+
+        if plot_type == '$':
+            ax3.set_ylabel("PnL ($)")
+            for year in years:
+                ax3.plot(self.ts_yearly_returns_usd[year], color = s_m.to_rgba(year))
+        elif plot_type == '%':
+            ax3.set_ylabel("PnL (%)")
+            for year in years:
+                ax3.plot(self.ts_yearly_returns_pct[year], color = s_m.to_rgba(year))
+
         fig.suptitle("Backtest Graphs")
         ax1.legend()
-        
+        plt.colorbar(s_m, ax = ax3)
         plt.show()

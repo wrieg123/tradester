@@ -74,3 +74,5 @@ if __name__ == '__main__':
     engine.set_universes(universes)
     engine.set_strategy(strat)
     engine.run()
+
+    engine.metrics.plot()
