@@ -187,7 +187,8 @@ class Metrics():
         ax1b.set_ylabel("Cumulative Performance ($1 invested)")
         ax1.set_ylabel("Portfolio Positioning (%)")
         ax2.set_title("Distribution of Trade PnL")
-        ax2.set_xlabel("PnL ($)")
+        ax2.set_xlabel("PnL ($1,000s)")
+        ax2.xaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda x, pos: f'{x:,.0f}'))
         ax3.set_title("Cumlative Return YoY")
         ax3.set_xlabel("Days in Year")
 
@@ -198,8 +199,8 @@ class Metrics():
         ax1b.plot(self.values.index.values, self.values.cumulative.values, color = 'black')
 
         # Graph 2: Distribution of Trade PnL
-        self.trading_log.loc[self.trading_log['gross'] > 0, 'gross'].hist(ax = ax2, color = 'green', bins = 50)
-        self.trading_log.loc[self.trading_log['gross'] < 0, 'gross'].hist(ax = ax2, color = 'red', bins = 50)
+        (self.trading_log.loc[self.trading_log['gross'] > 0, 'gross'] / 1000).hist(ax = ax2, color = 'green', bins = 50)
+        (self.trading_log.loc[self.trading_log['gross'] < 0, 'gross'] / 1000).hist(ax = ax2, color = 'red', bins = 50)
 
         # Graph 3: Yearly Returns by either % or $
         years = self.ts_yearly_returns_usd.columns
