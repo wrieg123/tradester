@@ -182,24 +182,23 @@ class Metrics():
         ax3 = fig.add_subplot(gs[1, 1])
         
         ax1.set_title("Strategy Performance Characteristics")
-        ax1.set_ylabel("Positioning (% of Capital)")
-        ax1b.set_ylabel("Cumulative Return (%)")
+        ax1b.set_ylabel("Cumulative Performance ($1 invested)")
+        ax1.set_ylabel("Portfolio Positioning (%)")
         ax2.set_title("Distribution of Trade PnL")
         ax2.set_ylabel("PnL ($)")
         ax3.set_title("Cumlative Return YoY")
 
         # Graph 1: Performance and positioning
-        self.values['Long Market Value'].plot(ax = ax1, color = 'green', alpha = 0.5)
-        self.values['Short Market Value'].plot(ax = ax1, color = 'red', alpha = 0.5)
-        self.values['Net Market Value'].plot.area(ax = ax1, color = 'blue', alpha = 0.25, stacked = False)
-        self.values['cumulative'].plot(ax = ax1b, color = 'black')
+        ax1.plot(self.values.index.values, self.values['Long Market Value'].values, color = 'green', alpha = 0.5, label = 'Long Market Value')
+        ax1.plot(self.values.index.values, self.values['Short Market Value'].values, color = 'red', alpha = 0.5, label = 'Short Market Value')
+        ax1.fill_between(self.values.index.values, self.values['Net Market Value'].values, color = 'blue', alpha = 0.25, label = 'Net Market Value')
+        ax1b.plot(self.values.index.values, self.values.cumulative.values, color = 'black')
 
         # Graph 2: Distribution of Trade PnL
         self.trading_log.loc[self.trading_log['gross'] > 0, 'gross'].hist(ax = ax2, color = 'green', bins = 50)
         self.trading_log.loc[self.trading_log['gross'] < 0, 'gross'].hist(ax = ax2, color = 'red', bins = 50)
 
         # Graph 3: Yearly Returns by either % or $
-
         years = self.ts_yearly_returns_usd.columns
 
         norm = mpl.colors.Normalize(vmin = min(years), vmax = max(years))

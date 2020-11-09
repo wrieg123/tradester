@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
 
     universes = [
-                FuturesUniverse('Aggs', ['YW'], (1,5)),
+                FuturesUniverse('Brent', ['BZ'], (1,5)),
                 ]
     
     strat = Strat(universes)
