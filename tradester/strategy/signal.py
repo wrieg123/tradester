@@ -16,21 +16,42 @@ class SignalGroup():
 
     def __init__(self):
         self.group = {}
+        self.cached_assets = [] 
+        self.cached_keys = []
+        self.old_keys = []
 
-    def _get_signals(self, assets):
-        if assets is None:
-            return list(self.group.keys())
+    def _get_signals(self, assets, run_type, old = False):
         keys = []
-        for asset in assets:
-            for k in list(self.group.keys()):
-                if asset in k:
-                    keys.append(k)
-        keys = list(set(keys))
-        return keys
+        if run_type == 'set':
+            if set(assets) != set(self.cached_assets):
+                self.cached_assets = assets
+                for asset in assets:
+                    for k in list(self.group.keys()):
+                        if asset in k:
+                            keys.append(k)
+                keys = list(set(keys))
+                self.cached_keys = keys
+                self.old_keys = list(set(self.old_keys + keys))
+            return self.cached_keys
+        else:
+            if old: 
+                for asset in assets:
+                    for k in self.old_keys:
+                        if asset in k:
+                            keys.append(k)
+            else:
+                for asset in assets:
+                    for k in self.cached_keys:
+                        if asset in k:
+                            keys.append(k)
+            return list(set(keys))
+                
 
-    def get_indicators(self, assets = None):
+
+        
+    def get_indicators(self, assets = None, old = False):
         temp_dict = {}
-        for k in self._get_signals(assets):
+        for k in self._get_signals(assets, 'get', old = old):
             for s in self.group[k]:
                 for c in s.identifiers:
                     ts = s.indicator.ts
@@ -54,9 +75,9 @@ class SignalGroup():
         return {k : np.column_stack(v) for k, v in list(temp_dict.items())}
 
    
-    def get_indicator_tree(self, assets = None):
+    def get_indicator_tree(self, assets = None, old = False):
         temp_dict = {}
-        for k in self._get_signals(assets):
+        for k in self._get_signals(assets, 'get', old = old):
             for s in self.group[k]:
                 g = s.grouping if s.grouping is not None else 'None'
                 name = s.indicator_name
@@ -94,6 +115,6 @@ class SignalGroup():
 
 
     def refresh(self, assets = None):
-        for k in self._get_signals(assets):
+        for k in self._get_signals(assets, 'set'):
             for i in self.group[k]:
                 i.refresh()

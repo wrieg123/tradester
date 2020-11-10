@@ -93,8 +93,6 @@ class FuturesFactory(WorkerGroup):
         deletes the feeds by key from memory storage of self.group and self.active_group
     check(contract : String)
         checks for update of feed of individual FuturesWorker by contract if it is still active
-    check_all()
-        checks for update of all active contract FuturesWorkers
 
     """
 

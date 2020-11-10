@@ -155,7 +155,7 @@ class FuturesUniverse(Universe):
             if asset.tradeable:
                 tradeable.append(asset.identifier)
 
-        self.tradeable = tradeable 
+        self.tradeable = list(set(tradeable + active_list))
         self.active_products = active_products
         self.inactive_products = inactive_products
         self.active_list = active_list

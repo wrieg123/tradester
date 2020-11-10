@@ -38,7 +38,11 @@ class Strat(Strategy):
             for contract in universe.active_list:
                 asset = universe.assets[contract]
 
-                sma = indicators[contract][:,0][-1] if len(indicators[contract][:,0]) > 0 else 0
+                try:
+                    sma = indicators[contract][:,0][-1] if len(indicators[contract][:,0]) > 0 else 0
+                except:
+                    sma = 0
+
                 current_position = positions[contract] if contract in positions.keys() else {'units': 0, 'side': 0} 
 
                 if sma > 0:

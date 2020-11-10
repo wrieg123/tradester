@@ -28,13 +28,15 @@ class Asset():
         self.meta = meta
         self.price_stream = Price(bar, cache = None, contract = identifier, multiplier = meta['multiplier'] if 'multiplier' in meta.keys() else 1)
         self.manager = None
+        self.start_date = pd.to_datetime(meta['daily_start_date']) if meta['daily_start_date'] is not None else None
+        self.end_date = pd.to_datetime(meta['daily_end_date']) if meta['daily_end_date'] is not None else None
     
     @property
     def tradeable(self):
-        if self.meta[f'{self.bar}_start_date'] is None or self.meta[f'{self.bar}_start_date'] is None:
+        if self.start_date is None or self.end_date is None:
             return False
         else:
-            return pd.to_datetime(self.meta[f'{self.bar}_start_date']) <= self.manager.now <= pd.to_datetime(self.meta[f'{self.bar}_end_date'])
+            return self.start_date <= self.manager.now <= self.end_date
 
     def set_manager(self, manager):
         self.manager = manager
