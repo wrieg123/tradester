@@ -158,14 +158,18 @@ class Engine():
                 for _, factory in list(self.feed_factories.items()):
                     factory.check_all()
 
+                tradeable_assets = []
                 for name, universe in list(self.universes.items()):
                     universe.refresh()
-                    self.feed_factories[name].set_active(universe.tradeable)
+                    tradeable = universe.tradeable
+                    self.feed_factories[name].set_active(tradeable)
+                    for asset in tradeable:
+                        tradeable_assets.append(asset)
                 
                 self.oms.process()
                 self.portfolio.reconcile()
 
-                self.strategy._refresh()
+                self.strategy.refresh(tradeable_assets)
 
                 if self.print_trades:
                     print(f'Portfolio Value: ${self.portfolio.value:,.0f}')

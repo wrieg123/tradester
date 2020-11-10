@@ -49,15 +49,14 @@ class Strategy():
         self.oms = oms
         self.portfolio = portfolio
     
-    def _refresh(self):
+    def refresh(self, assets):
         for i in list(self.top_down.values()):
             i.refresh()
         for i in list(self.covariance_map.values()):
             i.refresh()
-        assets =  []
-        for u in self.universes.values():
-            for a in u.tradeable:
-                assets.append(a)
+        #for u in self.universes.values():
+        #    for a in u.tradeable:
+        #        assets.append(a)
         self.bottom_up.refresh(assets = assets)
 
     def add(self, indicator, identifiers, base = 'bottom_up', group = None, name = None):

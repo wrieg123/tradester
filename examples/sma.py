@@ -4,7 +4,7 @@ from tradester import Engine, Indicator, FuturesUniverse, Strategy
 
 class SMA(Indicator):
 
-    def __init__(self, asset, period = 21):
+    def __init__(self, asset, period = 20):
         super().__init__(asset)
         self.period = period
     
@@ -15,8 +15,6 @@ class SMA(Indicator):
             return 0
         
         return data[-1] / data[-self.period:].mean() - 1
-
-
 
 
 class Strat(Strategy):
@@ -39,34 +37,33 @@ class Strat(Strategy):
         for universe in self.universes.values():
             for contract in universe.active_list:
                 asset = universe.assets[contract]
+
                 sma = indicators[contract][:,0][-1] if len(indicators[contract][:,0]) > 0 else 0
-                
                 current_position = positions[contract] if contract in positions.keys() else {'units': 0, 'side': 0} 
 
                 if sma > 0:
                     trades[contract] = {
                             'asset': asset,
                             'delta': 10 - current_position['units']*current_position['side'],
-                            'order_type': 'RANGE_BOUND_O',
+                            'order_type': 'TWAP',
                             }
                 elif sma < 0:
                     trades[contract] = {
                             'asset': asset,
                             'delta': -10 - current_position['units']*current_position['side'],
-                            'order_type': 'RANGE_BOUND_O',
+                            'order_type': 'TWAP',
                             }
                 else:
                     trades[contract] = {
                             'asset': asset,
                             'delta': 0 - current_position['units']*current_position['side'],
-                            'order_type': 'RANGE_BOUND_O',
+                            'order_type': 'TWAP',
                             }
 
         return trades
         
 
 if __name__ == '__main__':
-
 
     universes = [
                 FuturesUniverse('Brent', ['BZ'], (1,3)),

@@ -54,7 +54,7 @@ class SignalGroup():
         return {k : np.column_stack(v) for k, v in list(temp_dict.items())}
 
    
-    def get_indicator_tree(self, asset = None):
+    def get_indicator_tree(self, assets = None):
         temp_dict = {}
         for k in self._get_signals(assets):
             for s in self.group[k]:
@@ -68,12 +68,21 @@ class SignalGroup():
                     if g not in temp_dict[c].keys():
                         temp_dict[c][g] = {}
 
-                    if isinstance(ts, list):
-                        temp_dict[c][g][name] = np.column_stack([t for t in ts])
-                    elif isinstance(ts, dict):
-                        temp_dict[c][g][name] = np.column_stack([t for t in list(ts.values())])
+                    if name not in temp_dict[c][g].keys():
+                        if isinstance(ts, list):
+                            temp_dict[c][g][name] = np.column_stack([t for t in ts])
+                        elif isinstance(ts, dict):
+                            temp_dict[c][g][name] = np.column_stack([t for t in list(ts.values())])
+                        else:
+                            temp_dict[c][g][name] = np.column_stack([ts])
                     else:
-                        temp_dict[c][g][name] = np.column_stack([ts])
+                        if isinstance(ts, list):
+                            temp = np.column_stack([t for t in ts])
+                        elif isinstance(ts, dict):
+                            temp = np.column_stack([t for t in list(ts.values())])
+                        else:
+                            temp = np.column_stack([ts])
+                        temp_dict[c][g][name] = np.concatentate([temp, temp_dict[c][g][name]], axis = 1)
 
         return temp_dict
 

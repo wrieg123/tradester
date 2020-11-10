@@ -1,5 +1,6 @@
 from .order import Order
 
+import numpy as np
 
 STANDARD_FEES = {
     'FUT': 3.00,
@@ -287,6 +288,18 @@ class OMS():
             elif order_type == 'BAR_AVG':
                 order_fill = True
                 fill_price = (high + low + open + close) / 4
+            elif order_type == 'TWAP':
+                order_fill = True
+                if close > open:
+                    ol = (open + low) / 2
+                    hl = (high + low) / 2
+                    hc = (high + close) / 2
+                    fill_price = (ol + hl + hc) / 3
+                else:
+                    oh = (open + high) / 2
+                    hl = (high + low) / 2
+                    lc = (low + close) / 2
+                    fill_price = (oh+hl+lc)/3
 
             if order_fill:
                 self._fill_order(order, fill_price, filled_units, fee * filled_units)
