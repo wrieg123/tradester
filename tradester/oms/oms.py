@@ -7,6 +7,26 @@ STANDARD_FEES = {
 }
 
 class OMS():
+    """
+    The Order Management System (OMS) is meant to the point of contact between a user defined strategy
+    and the portfolio. A strategy places orders, and whether or not that order gets filled puts the assets
+    into the portfolio.
+
+    ...
+
+    Paramaters
+    ----------
+    adv_participation : float, optional (default : .10)
+        percentage of average daily volume for the asset traded
+    adv_period : float, optional (default : 21)
+        days for which to calculate average daily volume
+    adv_oi : float, optional (default : 0.05)
+        percentage of open interested to trade with
+    fee structure : dict, optional
+        fee structure for asset types to calculate trading comissions and fees
+
+
+    """
 
     def __init__(self, adv_participation = .10, adv_period = 21, adv_oi = .05, fee_structure = None):
         self.adv_participation = adv_participation
@@ -32,11 +52,12 @@ class OMS():
         del self.order_book[identifier]
         self.order_log.append(info)
     
-    def _fill_order(self, order, fill_price, filled_units, multiplier, fees):
+    def _fill_order(self, order, fill_price, filled_units, fees):
         order.fill(self.manager.now, fill_price, filled_units)
 
         info = order.info
         asset = order.asset
+        multiplier = asset.price_stream.multiplier
 
         self._remove_from_ob(info['identifier'])
 
@@ -135,52 +156,73 @@ class OMS():
             if order_type == 'MARKET':
                 # Market order, drill the close
                 order_fill = True
-                self._fill_order(order, close, filled_units, multiplier, fee * filled_units)
+                fill_price = close
             elif order_type == 'LIMIT':
                 # regular limit order, fill at lim px
                 limit = bands['LIMIT']
                 if side == 1:
                     if low <= limit:
                         order_fill = True
-                        self._fill_order(order, limit, filled_units, multiplier, fee * filled_units)
+                        fill_price = limit
                     elif close <= limit:
                         order_fill = True
-                        self._fill_order(order, limit, filled_units, multiplier, fee * filled_units)
+                        fill_price = limit
                 elif side == -1:
                     if high >= limit:
                         order_fill = True
-                        self._fill_order(order, limit, filled_units, multiplier, fee * filled_units)
+                        fill_price = limit
                     elif close >= limit:
                         order_fill = True
-                        self._fill_order(order, limit, filled_units, multiplier, fee * filled_units)
+                        fill_price == limit
             elif order_type == 'LOF':
                 # if limit is not hit, drill the close
                 limit = bands['LIMIT']
                 if side == 1:
                     if low <= limit:
                         order_fill = True
-                        self._fill_order(order, limit, filled_units, multiplier, fee * filled_units)
+                        fill_price = limit
                     elif close <= limit:
                         order_fill = True
-                        self._fill_order(order, limit, filled_units, multiplier, fee * filled_units)
+                        fill_price = limit
                     else:
                         order_fill = True
-                        self._fill_order(order, close, filled_units, multiplier, fee * filled_units)
+                        fill_price = close
 
                 elif side == -1:
                     if high >= limit:
                         order_fill = True
-                        self._fill_order(order, limit, filled_units, multiplier, fee * filled_units)
+                        fill_price = limit
                     elif close >= limit:
                         order_fill = True
-                        self._fill_order(order, limit, filled_units, multiplier, fee * filled_units)
+                        fill_price = limit
                     else:
                         order_fill = True
-                        self._fill_order(order, close, filled_units, multiplier, fee * filled_units)
+                        fill_price = close
             elif order_type == 'VWAP':
                 # trade the avg of the high and low (maybe add in a vwap field in future)
                 order_fill = True
-                self._fill_order(order, (high + low)/2, filled_units, multiplier, fee * filled_units)
+                fill_price = (high + low) / 2
+            elif order_type == 'BEST_FILL':
+                order_fill = True
+                if side == 1:
+                    fill_price = low
+                elif side == -1:
+                    fill_price = high
+            elif order_type == 'WORST_FILL':
+                order_fill = True
+                if side == 1:
+                    fill_price = high 
+                elif side == -1:
+                    fill_price = low 
+            elif order_type == 'TRIANGULAR':
+                order_fill = True
+                fill_price = (high + low + close) / 3
+            elif order_type == 'OPEN':
+                order_fill = True
+                fill_price = open
+
+            if order_fill:
+                self._fill_order(order, fill_price, filled_units, fee * filled_units)
 
             if not order_fill:
                 if not info['time_in_force'] is None and info['time_in_force'] >= info['days_on']:

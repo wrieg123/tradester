@@ -85,6 +85,9 @@ class Strategy():
         for c, info in list(trades.items()):
             asset = info['asset']
             delta = info['delta']
+            order_type = info['order_type'] if 'order_type' in info.keys() else 'MARKET'
+            bands = info['bands'] if 'bands' in info.keys() else {}
+            fok = info['fok'] if 'fok' in info.keys() else False
 
             if delta != 0 and not c is None:
-                self.oms.place_order(1 if delta > 0 else -1, asset, abs(delta))
+                self.oms.place_order(1 if delta > 0 else -1, asset, abs(delta), order_type = order_type, bands = bands, fok = fok)

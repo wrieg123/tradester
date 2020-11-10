@@ -47,16 +47,19 @@ class Strat(Strategy):
                     trades[contract] = {
                             'asset': asset,
                             'delta': 10 - current_position['units']*current_position['side'],
+                            'order_type': 'WORST_FILL',
                             }
                 elif sma < 0:
                     trades[contract] = {
                             'asset': asset,
                             'delta': -10 - current_position['units']*current_position['side'],
+                            'order_type': 'WORST_FILL',
                             }
                 else:
                     trades[contract] = {
                             'asset': asset,
                             'delta': 0 - current_position['units']*current_position['side'],
+                            'order_type': 'WORST_FILL',
                             }
 
         return trades
@@ -66,11 +69,11 @@ if __name__ == '__main__':
 
 
     universes = [
-                FuturesUniverse('BZ', ['BZ'], (1,2)),
+                FuturesUniverse('Brent', ['BZ'], (1,3)),
                 ]
     
     strat = Strat(universes)
-    engine = Engine(print_trades = False)
+    engine = Engine(starting_cash = 1000000, print_trades = False)
     engine.set_universes(universes)
     engine.set_strategy(strat)
     engine.run()
