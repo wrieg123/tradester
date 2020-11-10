@@ -24,8 +24,50 @@ class OMS():
         percentage of open interested to trade with
     fee structure : dict, optional
         fee structure for asset types to calculate trading comissions and fees
+   
 
-
+    Attributes
+    ----------
+    portfolio : tradester.portfolios.Portfolio
+        the connected portfolio object
+    manager : tradester.factories.ClockManager
+        the connected central clock
+    order_num : int
+        the current order number (for tracking in the logs)
+    order_book : dict
+        a one sided order book (i.e. each contract can only have one entry)
+    order_log : list
+        a log of all orders and order actions during the runtime
+    
+    Methods
+    -------
+    _connect(manager : tradester.factories.ClockManager, portfolio : tradester.portfolios.Portfolio)
+        used in the engine to connect the oms to the central ClockManager and Portfolio
+    _remove_from_ob(identifier : string)
+        removes the identifier order from the order_book, appends the order info to the order_log
+    _fill_order(order : tradester.oms.Order, fill_price : float, filled_units : int, fees : float)
+        fills the order, places the trade into the portfolio
+    place_order(side : int, asset : tradester.finance.Asset, units : int, time_in_force : int, optional, order_type : string, bands : dict, fok : bool, optional)
+        places the order onto the order_book with the desired paramaters: side = 1 is buy, side = -1 is sell
+        - possible order_types:
+            MARKET -> fills at close
+            OPEN -> fills at open
+            LIMIT -> fills at limit price, limit prices defined in bands kwarg (ex: bands = {'LIMIT': 100}), order remains open till filled or updated
+            RANGE -> fills at avg of high and low price
+            RANGE_BOUND_C -> fills at the average of the low and close for a buy or high and close for a sell
+            RANGE_BOUND_O -> fills at the average of the low and open for a buy or high and open for a sell
+            INVERSE_BOUND_C -> fills at the average of the low and close for a sell or high and close for a buy 
+            INVERSE_BOUND_O -> fills at the average of the low and open for a sell or high and open for a buy 
+            BEST_FILL -> fills at the low for a buy and high for a sell
+            WORST_FILL -> fills at the low for a sell and high for a buy 
+            TRIANGULAR_C -> fills at the average of high, low, and close
+            TRIANGULAR_O -> fills at the average of high, low, and open
+            BAR_AVG -> fills at the average of open, high, low, and close   
+    max_shares(asset : tradester.finance.Asset)
+        returns the maximum tradeable shares based on adv_participation and adv_oi if applicable
+    process()
+        processes all orders on the order_book to check for fills
+         
     """
 
     def __init__(self, adv_participation = .10, adv_period = 21, adv_oi = .05, fee_structure = None):
@@ -154,11 +196,12 @@ class OMS():
             order_fill = False
 
             if order_type == 'MARKET':
-                # Market order, drill the close
                 order_fill = True
                 fill_price = close
+            elif order_type == 'OPEN':
+                order_fill = True
+                fill_price = open
             elif order_type == 'LIMIT':
-                # regular limit order, fill at lim px
                 limit = bands['LIMIT']
                 if side == 1:
                     if low <= limit:
@@ -175,7 +218,6 @@ class OMS():
                         order_fill = True
                         fill_price == limit
             elif order_type == 'LOF':
-                # if limit is not hit, drill the close
                 limit = bands['LIMIT']
                 if side == 1:
                     if low <= limit:
@@ -187,7 +229,6 @@ class OMS():
                     else:
                         order_fill = True
                         fill_price = close
-
                 elif side == -1:
                     if high >= limit:
                         order_fill = True
@@ -198,10 +239,33 @@ class OMS():
                     else:
                         order_fill = True
                         fill_price = close
-            elif order_type == 'VWAP':
-                # trade the avg of the high and low (maybe add in a vwap field in future)
+            elif order_type == 'RANGE':
                 order_fill = True
                 fill_price = (high + low) / 2
+            elif order_type == 'RANGE_BOUND_C':
+                order_fill = True
+                if side == 1:
+                    fill_price = (low + close) / 2
+                elif side == -1:
+                    fill_price = (high + close) / 2
+            elif order_type == 'INVERSE_BOUND_C':
+                order_fill = True
+                if side == 1:
+                    fill_price = (high + close) / 2
+                elif side == -1:
+                    fill_price = (low + close) / 2
+            elif order_type == 'RANGE_BOUND_O':
+                order_fill = True
+                if side == 1:
+                    fill_price = (low + open) / 2
+                elif side == -1:
+                    fill_price = (high + open) / 2
+            elif order_type == 'INVERSE_BOUND_O':
+                order_fill = True
+                if side == 1:
+                    fill_price = (high + open) / 2
+                elif side == -1:
+                    fill_price = (low + open) / 2
             elif order_type == 'BEST_FILL':
                 order_fill = True
                 if side == 1:
@@ -214,12 +278,15 @@ class OMS():
                     fill_price = high 
                 elif side == -1:
                     fill_price = low 
-            elif order_type == 'TRIANGULAR':
+            elif order_type == 'TRIANGULAR_C':
                 order_fill = True
                 fill_price = (high + low + close) / 3
-            elif order_type == 'OPEN':
+            elif order_type == 'TRIANGULAR_O':
                 order_fill = True
-                fill_price = open
+                fill_price = (high + low + open) / 3
+            elif order_type == 'BAR_AVG':
+                order_fill = True
+                fill_price = (high + low + open + close) / 4
 
             if order_fill:
                 self._fill_order(order, fill_price, filled_units, fee * filled_units)

@@ -47,19 +47,19 @@ class Strat(Strategy):
                     trades[contract] = {
                             'asset': asset,
                             'delta': 10 - current_position['units']*current_position['side'],
-                            'order_type': 'WORST_FILL',
+                            'order_type': 'RANGE_BOUND_O',
                             }
                 elif sma < 0:
                     trades[contract] = {
                             'asset': asset,
                             'delta': -10 - current_position['units']*current_position['side'],
-                            'order_type': 'WORST_FILL',
+                            'order_type': 'RANGE_BOUND_O',
                             }
                 else:
                     trades[contract] = {
                             'asset': asset,
                             'delta': 0 - current_position['units']*current_position['side'],
-                            'order_type': 'WORST_FILL',
+                            'order_type': 'RANGE_BOUND_O',
                             }
 
         return trades

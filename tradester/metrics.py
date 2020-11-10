@@ -17,13 +17,11 @@ class Metrics():
             self, 
             portfolio, 
             oms,
-            trade_start_date, 
             start_date, 
             end_date, 
             ):
         self.portfolio = portfolio
         self.oms = oms
-        self.trade_start_date = trade_start_date
         self.start_date = start_date
         self.end_date = end_date
         self.holdings = None
@@ -43,10 +41,10 @@ class Metrics():
         self.values = self.portfolio.values_df.set_index('date').sort_index()
         self.trading_log = self.portfolio.trading_log_df
 
-        if not self.trade_start_date is None:
-            self.holdings = self.holdings.loc[self.holdings.date >= pd.to_datetime(self.trade_start_date)]
-            self.values = self.values.loc[self.values.index >= pd.to_datetime(self.trade_start_date)]
-            self.trading_log = self.trading_log.loc[self.trading_log.date >= pd.to_datetime(self.trade_start_date)]
+        #if not self.start_date is None:
+        #    self.holdings = self.holdings.loc[self.holdings.date >= pd.to_datetime(self.trade_start_date)]
+        #    self.values = self.values.loc[self.values.index >= pd.to_datetime(self.trade_start_date)]
+        #    self.trading_log = self.trading_log.loc[self.trading_log.date >= pd.to_datetime(self.trade_start_date)]
 
         self.values['expanding_max'] = self.values['value'].expanding().max()
         self.values['dd_%'] = (self.values['value'] / self.values['expanding_max'] - 1).apply(lambda x: 0 if x > 0 else x)

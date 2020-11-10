@@ -11,7 +11,58 @@ import time
 
 
 class Engine():
+    """
+    The main engine of the backtest.
 
+    ...
+    
+    Parameters
+    ----------
+    starting_cash : int
+        starting cash balance
+    start_date : string (YYYY-MM-DD)
+        date at which to start trading, might not be all available data; see Universes
+    end_date : string (YYYY-MM-DD)
+        date at which to end trading
+    bulk_load : boolean
+        bulk load the data (or not if False)
+    adv_participation : float
+        see OMS
+    adv_period : int
+        see OMS
+    adv_oi : int
+        see OMS
+    progress_bar : boolean
+        show the progress bar
+    print_trades : boolean
+        print out the trades (turns progress bar off)
+    
+    Attributes
+    ----------
+    manager : tradester.factories.Worker.manager
+        the central manager for all Workers, construction method exploits memory management of python
+    universes : dict
+        dictionary of all tradeable universes, format : {'name' : tradester.finance.Universe, ... }
+    feed_factories : dict
+        dictionary of all feed factories associated with universes, format : {'name': tradester.factories.FeedFactory, ... }
+    portfolio : tradester.portfolios.Portfolio
+        central portfolio object
+    oms : tradester.oms.OMS
+        central order management system
+    metrics : tradester.Metrics
+        class for metrics
+    strategy : tradester.strategy.Strategy
+        user-defined strategy
+
+    Methods
+    -------
+    set_universes(universes : list)
+        sets the self.universes attribute and connects the oms, portfolio and universes together and to the central manager (self.manager)
+    set_strategy(strategy : tradester.strategy.Strategy)
+        sets the user defined strategy and connects it to the portfolio, oms and manager
+
+
+    """
     def __init__(
             self, 
             starting_cash = 1000000, 
@@ -24,9 +75,7 @@ class Engine():
             adv_oi = 0.05, 
             progress_bar = True, 
             print_trades = False, 
-            trade_start_date = None, 
             ):
-        self.manager = Worker(None).manager
         self.starting_cash = starting_cash
         self.start_date = start_date
         self.end_date = end_date
@@ -37,12 +86,13 @@ class Engine():
         self.adv_oi = adv_oi
         self.progress_bar = progress_bar if print_trades == False else False
         self.print_trades = print_trades
-        self.trade_start_date = trade_start_date
+
+        self.manager = Worker(None).manager
         self.universes = {} 
         self.feed_factories = {}
         self.portfolio = Portfolio(starting_cash, print_trades = print_trades)
         self.oms = OMS(adv_participation = adv_participation, adv_period = adv_period, adv_oi = adv_oi)
-        self.metrics = Metrics(self.portfolio, self.oms, trade_start_date, start_date, end_date)
+        self.metrics = Metrics(self.portfolio, self.oms, start_date, end_date)
         self.strategy = None
 
 
