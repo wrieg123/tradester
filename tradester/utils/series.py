@@ -1,3 +1,4 @@
+from numba import jit
 import numpy as np
 
 
@@ -6,6 +7,7 @@ def chunk_up(l , n):
         yield l[i:i+n] 
 
 
+@jit(nopython = True, parallel = True)
 def vectorized_ema(data, window):
     alpha = 2/(window+1)
     alpha_rev = 1-alpha

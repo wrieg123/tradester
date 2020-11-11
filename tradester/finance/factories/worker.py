@@ -1,6 +1,7 @@
 from tradester.feeds.static import FuturesTS, SymbolsTS
 
 from multiprocessing import Manager, Process
+from numba import jit
 from copy import deepcopy 
 from tqdm import tqdm
 
@@ -56,12 +57,16 @@ class ClockManager():
         self.start_date = None 
         self.end_date = None
         self.previous = None
-        self.now = None
+        self._now = None
         self.new_day = False
     
     @property
     def mkt_open(self):
         return self.now_date in self.trading_calendar
+
+    @property
+    def now(self):
+        return self._now
 
     @property
     def now_date(self):
@@ -84,15 +89,15 @@ class ClockManager():
     
     def update(self):   
         try:
-            self.previous = deepcopy(self.now)
-            self.now = self.calendar.pop(0)
+            self.previous = self.now
+            self._now = self.calendar.pop(0)
 
             if not self.previous is None:
                 self.new_day = self.now_date > self.prev_date
             else:
                 self.new_day = True 
         except:
-            self.now = 'END'
+            self._now = 'END'
 
 class Worker():
     """
@@ -156,8 +161,10 @@ class Worker():
         self.stream = stream
 
     def check(self):    
-        if not self.stream is None and not self.bar is None:
-            self.stream.push(self.bar)
+        bar = self.feed.get(self.manager.now)
+        if not self.stream is None and not bar is None:
+            self.stream.push(bar)
+            del self.feed[self.manager.now]
 
 
 class WorkerGroup():

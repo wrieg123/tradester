@@ -1,4 +1,5 @@
 from tradester import Engine, Indicator, FuturesUniverse, Strategy
+from time import sleep
 
 
 
@@ -33,7 +34,6 @@ class Strat(Strategy):
 
         indicators = self.bottom_up.get_indicators(assets = self.active_assets)
         positions = self.portfolio.positions
-
         for universe in self.universes.values():
             for contract in universe.active_list:
                 asset = universe.assets[contract]
@@ -49,19 +49,19 @@ class Strat(Strategy):
                     trades[contract] = {
                             'asset': asset,
                             'delta': 10 - current_position['units']*current_position['side'],
-                            'order_type': 'TWAP',
+                            'order_type': 'BEST_FILL',
                             }
                 elif sma < 0:
                     trades[contract] = {
                             'asset': asset,
                             'delta': -10 - current_position['units']*current_position['side'],
-                            'order_type': 'TWAP',
+                            'order_type': 'BEST_FILL',
                             }
                 else:
                     trades[contract] = {
                             'asset': asset,
                             'delta': 0 - current_position['units']*current_position['side'],
-                            'order_type': 'TWAP',
+                            'order_type': 'BEST_FILL',
                             }
 
         return trades
@@ -70,7 +70,7 @@ class Strat(Strategy):
 if __name__ == '__main__':
 
     universes = [
-                FuturesUniverse('Brent', ['BZ'], (1,5)),
+                FuturesUniverse('Brent', ['BZ'], (1,3)),
                 ]
     
     strat = Strat(universes)

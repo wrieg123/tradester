@@ -147,7 +147,6 @@ class FuturesFactory(WorkerGroup):
    
     def add_group(self, group, holder):
         print('Adding in group:',group[0],'->', group[-1])
-        sleep(1)
         if len(group) > 0:
             try:
                 df = FuturesTS(group, fields = 'open, high, low, close, volume, open_interest', start_date = self.start_date, end_date = self.end_date, bar = self.bar_type, force_fast = True).data.unstack().dropna().reset_index()

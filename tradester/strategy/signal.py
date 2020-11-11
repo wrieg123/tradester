@@ -1,3 +1,4 @@
+from numba import jit
 import numpy as np
 
 class Signal():
@@ -16,45 +17,13 @@ class SignalGroup():
 
     def __init__(self):
         self.group = {}
+        self.tuple_map = {}
         self.cached_assets = [] 
         self.cached_keys = []
         self.old_keys = []
 
     def _get_signals(self, assets, run_type, old = False):
-        keys = []
-        #for asset in assets:
-        #    for k in list(self.group.keys()):
-        #        if asset in k:
-        #            keys.append(k)
-        #keys = list(set(keys))
-        #return keys
-        
-        if run_type == 'set':
-            if set(assets) != set(self.cached_assets):
-                self.cached_assets = assets
-                for asset in assets:
-                    for k in list(self.group.keys()):
-                        if asset in k:
-                            keys.append(k)
-                keys = list(set(keys))
-                self.cached_keys = keys
-                #self.old_keys = list(set(self.old_keys + keys))
-            return self.cached_keys
-        else:
-            if old: 
-                for asset in assets:
-                    for k in self.old_keys:
-                        if asset in k:
-                            keys.append(k)
-            else:
-                for asset in assets:
-                    for k in self.cached_keys:
-                        if asset in k:
-                            keys.append(k)
-            return list(set(keys))
-                
-
-
+        return list(set([item for x in assets for item in self.tuple_map[x]]))
         
     def get_indicators(self, assets = None, old = False):
         temp_dict = {}
@@ -119,6 +88,13 @@ class SignalGroup():
         if not signal.identifiers in self.group.keys():
             self.group[signal.identifiers] = []
         self.group[signal.identifiers].append(signal)
+
+        for identifier in signal.identifiers:
+            if identifier not in self.tuple_map.keys():
+                self.tuple_map[identifier] = [signal.identifiers]
+            else:
+                if signal.identifiers not in self.tuple_map[identifier]:
+                    self.tuple_map[identifier].append(signal.identifiers)
 
     def refresh(self, assets = None):
         for k in self._get_signals(assets, 'set'):

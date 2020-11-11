@@ -136,7 +136,7 @@ class Engine():
         self.strategy._connect(self.manager, self.oms, self.portfolio)
         self.strategy.initialize()
     
-    def run(self, fast_forward = False):
+    def run(self, fast_forward = False, metrics = True):
 
         print('Running backtest...')
         print(f'Starting value: ${self.starting_cash:,.0f}')
@@ -187,6 +187,7 @@ class Engine():
             pbar.close()
         print('Total Time:', round((time.time() - start)/60, 2), 'minutes')
 
-        self.metrics._calculate()
+        if metrics:
+            self.metrics._calculate()
 
-        self.metrics.print()
+            self.metrics.print()

@@ -36,19 +36,20 @@ class Stream():
 
     def __init__(self, cache):
         self.cache = cache
-        self._stream = []
-        #self._stream = np.array([]) 
+        self._stream = np.empty([2000]) 
         self._pointer = 0
     
     @property
     def ts(self):
-        #return self._stream
-        return np.array(self._stream) 
+        if self.pointer > 0:
+            return self._stream[:(self.pointer)]
+        else:
+            return np.array([])
 
     @property
     def v(self):
-        if len(self._stream) > 0:
-           return self._stream[-1]
+        if self.pointer > 0:
+           return self._stream[self.pointer-1]
         else:
             return None
 
@@ -108,14 +109,14 @@ class Stream():
         if not self.cache is None:
             self._stream = self._stream[-self.cache:]
     
-
     def push(self, x):
-        if str(x) != 'nan' or not x is None:
-            #self._stream = np.append(self.ts, x)
-            self._stream.append(x)
+        if str(x) != 'nan' and not x is None:
+            if self._stream.size == self._pointer:
+                self._stream = np.concatenate([self._stream, np.empty([self._stream.size*2])])
+            self._stream[self.pointer] = x
             self._pointer += 1
-            #self._check_cache()
         else:
-            raise ValueError('The input type is not in (int, float)')
+            pass
+            #raise ValueError('The input type is not in (int, float)')
         
 

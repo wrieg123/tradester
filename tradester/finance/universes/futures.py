@@ -59,7 +59,7 @@ class FuturesUniverse(Universe):
 
         self.products_meta = self.__get_products_meta()
         self.futures_meta = self.__get_futures_meta()
-        self.calendars = self.__create_calendar()
+        self.calendars, self.calendar_indexes = self.__create_calendar()
         self.continuations_meta = self.__get_continuations_meta()
         self.assets = {k : Future(k, name, bar, v) for k, v in list(self.futures_meta.items()) + list(self.continuations_meta.items())}
         self.tradeable = []
@@ -77,7 +77,7 @@ class FuturesUniverse(Universe):
     def __get_futures_meta(self):
         """returns futures meta information"""
 
-        query = f"select * from futures where product in ({str(self.products).strip('[]')}) and is_continuation = False and is_synthetic = False"
+        query = f"select * from futures where product in ({str(self.products).strip('[]')}) and is_continuation = False and is_synthetic = False and daily_end_date is not null;"
         df = CustomFeed(query).data.set_index('contract')
 
         if df.dtypes['is_active'] != bool:
@@ -111,6 +111,7 @@ class FuturesUniverse(Universe):
         df.index.name = 'contract'
         df.reset_index(inplace = True)
         calendars = {}
+        indexes = {}
 
         for product in self.products:
             sub_df = df.loc[df['product'] == product].copy()
@@ -128,9 +129,27 @@ class FuturesUniverse(Universe):
                 if s_factor != 0:
                     sub_df[cont] = sub_df[f'{product}-1'].shift(-s_factor)
             
-            calendars[product] = sub_df[conts]
-        return calendars
+            calendars[product] = sub_df[conts].to_dict(orient = 'index')
+            index = list(calendars[product].keys())
+            index.sort()
+            indexes[product] = index
+        return calendars, indexes
                     
+    def find_date(self, indexes, date, actor = 'active'):
+        
+        if actor == 'active':
+            for i in indexes:
+                if i > date:
+                    return i
+        elif actor == 'inactive':
+            for n, i in enumerate(indexes):
+                if i > date:
+                    if n >= 1:
+                        return indexes[:-(n-1)]
+                    else:
+                        return []
+
+
     def refresh(self):
         """ active contracts returned as dict in format: 
             {
@@ -144,17 +163,20 @@ class FuturesUniverse(Universe):
         active_list = []
         inactive_list = [] 
         for product in self.products:
-            active_products[product] = self.calendars[product].loc[self.calendars[product].index > self.manager.now].head(1).to_dict(orient = 'records')[0]
-            i_list = list(set(list(self.calendars[product].loc[self.calendars[product].index < self.manager.now, f'{product}-1'].tail(-1).values.flatten())))
-            inactive_products[product] = [x for x in i_list if x not in active_products[product].values()]
-            inactive_list += i_list
-            active_list += list(active_products[product].values())
+            active_date = self.find_date(self.calendar_indexes[product], self.manager.now)
+            active_products[product] = self.calendars[product][active_date]
+            
+            i_list = []
+            for index in self.find_date(self.calendar_indexes[product], self.manager.now, actor = 'inactive'):
+                i_list.extend(self.calendars[product][index])
+            
+            i_list = list(set(i_list).symmetric_difference(set(active_products[product])))
+            inactive_products[product] = i_list
+            inactive_list.extend(i_list)
+            active_list.extend(list(active_products[product].values()))
 
-        tradeable = []
-        for asset in self.assets.values():
-            if asset.tradeable:
-                tradeable.append(asset.identifier)
-
+        tradeable = [asset.identifier for asset in list(self.assets.values()) if asset.tradeable]
+    
         self.tradeable = list(set(tradeable + active_list))
         self.active_products = active_products
         self.inactive_products = inactive_products
