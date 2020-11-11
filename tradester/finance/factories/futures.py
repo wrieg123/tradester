@@ -1,6 +1,11 @@
 from tradester.feeds.static import FuturesTS
 from .worker import Worker, WorkerGroup
 
+from multiprocessing import Process, Pool, Manager
+from copy import deepcopy
+from time import sleep
+import pandas as pd
+
 class FuturesWorker(Worker):
     """
     A FuturesWorker is a child of parent, Worker, which is build specifically to handle futures contracts.
@@ -106,11 +111,28 @@ class FuturesFactory(WorkerGroup):
         if len(self.identifiers) > 0:
             print('Initializing feed with',len(self.identifiers), 'identifiers')
             if len(self.identifiers) > 50:
-                for chunk in self.chunk_up(self.identifiers, 25):
-                    print('Adding in chunk:',chunk[0],'->', chunk[-1])
-                    self.add_group(chunk)
+                manager = Manager()
+                holder = manager.list()
+                pool = Pool(processes = 4)
+                for group in self.chunk_up(self.identifiers, 50):
+                    pool.apply_async(self.add_group, args = [group, holder])
+                pool.close()
+                pool.join()
+
+                master_df = pd.concat(holder)
+
+                available = list(master_df['contract'].unique())
+                tradeable = set(self.identifiers).intersection(set(available))
+                self.not_tradeable = list(set(available).symmetric_difference(set(self.identifiers)))
+
+                grouped = dict(tuple(master_df.groupby('contract')))
+                print('Not Tradeable:', self.not_tradeable)
+                for contract in tradeable:
+                    self.group[contract] = FuturesWorker(contract, bar = self.bar_type, feed = grouped[contract].pivot_table(index = 'date', columns = 'field', values = 'value').to_dict(orient = 'index'), cache = self.cache)
+
+
             else:
-                self.add_group(self.identifiers)
+                self.add_group(self.identifiers, None)
     
 
     def _get_feed(self, contract, temp = None):
@@ -123,7 +145,9 @@ class FuturesFactory(WorkerGroup):
     def add(self, contract, feed = None):
         self.group[contract] = self._get_feed(contract) if feed is None else feed
    
-    def add_group(self, group):
+    def add_group(self, group, holder):
+        print('Adding in group:',group[0],'->', group[-1])
+        sleep(1)
         if len(group) > 0:
             try:
                 df = FuturesTS(group, fields = 'open, high, low, close, volume, open_interest', start_date = self.start_date, end_date = self.end_date, bar = self.bar_type, force_fast = True).data.unstack().dropna().reset_index()
@@ -140,12 +164,15 @@ class FuturesFactory(WorkerGroup):
                 df['contract'] = group[0]
             else:
                 df.columns = ['contract', 'field', 'date', 'value']
-            for contract in group:
-                try:
-                    self.group[contract] = FuturesWorker(contract, bar = self.bar_type, feed = df.loc[df.contract == contract].pivot_table(index = 'date', columns = 'field', values = 'value').to_dict(orient = 'index'), cache = self.cache)
-                except:
-                    self.not_tradeable.append(contract)
-                    print(contract, 'not tradeable')
+            if not holder is None:
+                holder.append(df)
+            else:
+                for contract in group:
+                    try:
+                        self.group[contract] = FuturesWorker(contract, bar = self.bar_type, feed = df.loc[df.contract == contract].pivot_table(index = 'date', columns = 'field', values = 'value').to_dict(orient = 'index'), cache = self.cache)
+                    except:
+                        self.not_tradeable.append(contract)
+                        print(contract, 'not tradeable')
 
     def set_streams(self, streams):
         for k, s in list(streams.items()):

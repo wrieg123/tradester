@@ -22,36 +22,36 @@ class SignalGroup():
 
     def _get_signals(self, assets, run_type, old = False):
         keys = []
-        for asset in assets:
-            for k in list(self.group.keys()):
-                if asset in k:
-                    keys.append(k)
-        keys = list(set(keys))
-        return keys
+        #for asset in assets:
+        #    for k in list(self.group.keys()):
+        #        if asset in k:
+        #            keys.append(k)
+        #keys = list(set(keys))
+        #return keys
         
-        #if run_type == 'set':
-        #    if set(assets) != set(self.cached_assets):
-        #        self.cached_assets = assets
-        #        for asset in assets:
-        #            for k in list(self.group.keys()):
-        #                if asset in k:
-        #                    keys.append(k)
-        #        keys = list(set(keys))
-        #        self.cached_keys = keys
-        #        #self.old_keys = list(set(self.old_keys + keys))
-        #    return self.cached_keys
-        #else:
-        #    if old: 
-        #        for asset in assets:
-        #            for k in self.old_keys:
-        #                if asset in k:
-        #                    keys.append(k)
-        #    else:
-        #        for asset in assets:
-        #            for k in self.cached_keys:
-        #                if asset in k:
-        #                    keys.append(k)
-        #    return list(set(keys))
+        if run_type == 'set':
+            if set(assets) != set(self.cached_assets):
+                self.cached_assets = assets
+                for asset in assets:
+                    for k in list(self.group.keys()):
+                        if asset in k:
+                            keys.append(k)
+                keys = list(set(keys))
+                self.cached_keys = keys
+                #self.old_keys = list(set(self.old_keys + keys))
+            return self.cached_keys
+        else:
+            if old: 
+                for asset in assets:
+                    for k in self.old_keys:
+                        if asset in k:
+                            keys.append(k)
+            else:
+                for asset in assets:
+                    for k in self.cached_keys:
+                        if asset in k:
+                            keys.append(k)
+            return list(set(keys))
                 
 
 
@@ -119,7 +119,6 @@ class SignalGroup():
         if not signal.identifiers in self.group.keys():
             self.group[signal.identifiers] = []
         self.group[signal.identifiers].append(signal)
-
 
     def refresh(self, assets = None):
         for k in self._get_signals(assets, 'set'):

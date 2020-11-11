@@ -9,7 +9,6 @@ import numpy as np
 
 
 class ClockManager():
-
     """
     ClockManager is a central 'clock' to control aspects of iterating through time.
 

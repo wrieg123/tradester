@@ -70,7 +70,7 @@ class Strat(Strategy):
 if __name__ == '__main__':
 
     universes = [
-                FuturesUniverse('Brent', ['BZ'], (1,3)),
+                FuturesUniverse('Brent', ['BZ'], (1,5)),
                 ]
     
     strat = Strat(universes)
