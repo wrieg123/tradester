@@ -36,14 +36,14 @@ class Stream():
 
     def __init__(self, cache):
         self.cache = cache
-        #self._stream = []
-        self._stream = np.array([]) 
+        self._stream = []
+        #self._stream = np.array([]) 
         self._pointer = 0
     
     @property
     def ts(self):
-        return self._stream
-        #return np.array(self._stream) 
+        #return self._stream
+        return np.array(self._stream) 
 
     @property
     def v(self):
@@ -111,8 +111,8 @@ class Stream():
 
     def push(self, x):
         if str(x) != 'nan' or not x is None:
-            self._stream = np.append(self.ts, x)
-            #self._stream.append(x)
+            #self._stream = np.append(self.ts, x)
+            self._stream.append(x)
             self._pointer += 1
             #self._check_cache()
         else:
