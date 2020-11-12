@@ -36,7 +36,7 @@ class Stream():
 
     def __init__(self, cache):
         self.cache = cache
-        self._stream = np.empty([2000]) 
+        self._stream = np.empty([5000]) 
         self._pointer = 0
     
     @property

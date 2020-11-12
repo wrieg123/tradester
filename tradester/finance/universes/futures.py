@@ -71,6 +71,7 @@ class FuturesUniverse(Universe):
     def __get_products_meta(self):
         """returns information for product information"""
 
+        print("Loading Universe:", self.name, str(self.products).strip('[]'))
         query = f"select * from products where product in ({str(self.products).strip('[]')})"
         return CustomFeed(query).data.set_index('product').to_dict(orient = 'index')
 
@@ -128,7 +129,6 @@ class FuturesUniverse(Universe):
 
                 if s_factor != 0:
                     sub_df[cont] = sub_df[f'{product}-1'].shift(-s_factor)
-            
             calendars[product] = sub_df[conts].to_dict(orient = 'index')
             index = list(calendars[product].keys())
             index.sort()
@@ -168,7 +168,7 @@ class FuturesUniverse(Universe):
             
             i_list = []
             for index in self.find_date(self.calendar_indexes[product], self.manager.now, actor = 'inactive'):
-                i_list.extend(self.calendars[product][index])
+                i_list.extend(self.calendars[product][index].values())
             
             i_list = list(set(i_list).symmetric_difference(set(active_products[product])))
             inactive_products[product] = i_list
@@ -176,7 +176,7 @@ class FuturesUniverse(Universe):
             active_list.extend(list(active_products[product].values()))
 
         tradeable = [asset.identifier for asset in list(self.assets.values()) if asset.tradeable]
-    
+         
         self.tradeable = list(set(tradeable + active_list))
         self.active_products = active_products
         self.inactive_products = inactive_products

@@ -4,9 +4,10 @@ from .stream import Stream
 
 class Indicator():
     
-    def __init__(self, data, attributes = ['_indicator']):
+    def __init__(self, data, attributes = ['_indicator'], override = False):
         self.data = data
         self.attributes = attributes
+        self.override = override
         self._pointer = 0
         for i in attributes:
             setattr(self, i, Stream(None))
@@ -37,7 +38,14 @@ class Indicator():
         return should_refresh
 
     def refresh(self):
-        if self.should_refresh:
+        if self.override:
+            if len(self.attributes) == 1:
+                getattr(self, self.attributes[0]).push(self.calculate())
+            else:
+                for a, v in list(self.calculate().items()):
+                    getattr(self, a).push(v)
+            self._pointer += 1
+        elif self.should_refresh:
             if len(self.attributes) == 1:
                 getattr(self, self.attributes[0]).push(self.calculate())
             else:

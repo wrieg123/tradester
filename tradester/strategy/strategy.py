@@ -43,7 +43,6 @@ class Strategy():
                 assets.append(a)
         return assets
 
-
     def _connect(self, manager, oms, portfolio):
         self.manager = manager
         self.oms = oms
@@ -54,9 +53,6 @@ class Strategy():
             i.refresh()
         for i in list(self.covariance_map.values()):
             i.refresh()
-        #for u in self.universes.values():
-        #    for a in u.tradeable:
-        #        assets.append(a)
         self.bottom_up.refresh(assets = assets)
 
     def add(self, indicator, identifiers, base = 'bottom_up', group = None, name = None):

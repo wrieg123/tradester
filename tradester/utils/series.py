@@ -7,7 +7,7 @@ def chunk_up(l , n):
         yield l[i:i+n] 
 
 
-@jit(nopython = True, parallel = True)
+@jit(nopython = True, nogil = True)
 def vectorized_ema(data, window):
     alpha = 2/(window+1)
     alpha_rev = 1-alpha
