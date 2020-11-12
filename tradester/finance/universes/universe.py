@@ -1,9 +1,6 @@
 from tradester.feeds.static import CustomFeed
 
-from dateutil.relativedelta import relativedelta as timedelta
-
 import pandas as pd
-import math
 
 
 class Universe():

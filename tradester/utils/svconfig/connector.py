@@ -1,8 +1,16 @@
 import os
 import json
 import sqlalchemy
-import psycopg2
-import mysql.connector as mysql
+
+try: 
+    import mysql.connector as mysql
+except:
+    pass
+
+try:
+    import psycopg2
+except: 
+    pass
 
 try:
     import pyodbc
