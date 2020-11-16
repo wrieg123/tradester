@@ -8,5 +8,12 @@ Tradester is a python-based backtesting framework to test trading strategies usi
 py setup.py install
 ```
 
+Please note that I run out of WSL 2 (Ubuntu 20.something), there may need to be some modifications for other operating systems. By default the system handles MySQL, you may need to include psycopg2 (or psycopg2-binary for linux) or pyodbc for PostgreSQL or SQL Server support.
+
 ## Running a Strategy (SMA Strategy)
 Please see the completed SMA Strategy example in examples/sma.py.
+
+
+## User Control
+
+The systems is designed with bias limitations in mind. If your strategy has a buy signal Monday, it won't be executed until Tuesday. Additionally, there are rules defined in the Engine() constructor such as _adv_participation_, _adv_period_, and _adv_oi_ which limit the percentage of average daily volume (_adv_particiation_ over _adv_period_ periods) or percentage of open interest (_adv_oi_).
