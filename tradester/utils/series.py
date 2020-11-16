@@ -1,4 +1,4 @@
-from numba import jit
+from numba import jit, vectorize, float32, int32
 import numpy as np
 
 
