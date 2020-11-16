@@ -30,7 +30,8 @@ class Asset():
         self.manager = None
         self.start_date = pd.to_datetime(meta['daily_start_date']) if meta['daily_start_date'] is not None else pd.to_datetime('3000-01-01') 
         self.end_date = pd.to_datetime(meta['daily_end_date']) if meta['daily_end_date'] is not None else pd.to_datetime('1800-01-01') 
-    
+        self.last_trade_date = pd.to_datetime(meta['last_trade_date']) if meta['last_trade_date'] is not None else None 
+
     @property
     def tradeable(self):
         return self.start_date <= self.manager.now and self.manager.now <= self.end_date

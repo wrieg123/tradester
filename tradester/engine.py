@@ -9,6 +9,8 @@ from tqdm import tqdm as tqdmr
 import pandas as pd
 import time
 
+import warnings
+warnings.filterwarnings('ignore')
 
 class Engine():
     """
@@ -158,18 +160,22 @@ class Engine():
                 for _, factory in list(self.feed_factories.items()):
                     factory.check_all()
 
-                tradeable_assets = []
+                active_assets = []
+                inactive_assets = []
                 for name, universe in list(self.universes.items()):
                     universe.refresh()
                     tradeable = universe.tradeable
                     self.feed_factories[name].set_active(tradeable)
-                    for asset in tradeable:
-                        tradeable_assets.append(asset)
-                
+                    for asset in tradeable + universe.active_list:
+                        active_assets.append(asset)
+                    inactive_assets.extend(universe.inactive_list)
+                active_assets = list(set(active_assets)) 
                 self.oms.process()
                 self.portfolio.reconcile()
 
-                self.strategy.refresh(tradeable_assets)
+                self.strategy.bottom_up.set_inactive(inactive_assets)
+                self.strategy.refresh(active_assets)
+
 
                 if self.print_trades:
                     print(f'Portfolio Value: ${self.portfolio.value:,.0f}')

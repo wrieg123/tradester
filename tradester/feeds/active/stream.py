@@ -1,3 +1,5 @@
+from numba import jit
+
 import numpy as np
 import math
 
@@ -35,7 +37,6 @@ class Stream():
     """
 
     def __init__(self, cache):
-        self.cache = cache
         self._stream = np.empty([5000]) 
         self._pointer = 0
     

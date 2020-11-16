@@ -8,7 +8,7 @@ ATTRIBUTES = {
         'tick': ['b','a', 'bq', 'aq']
         }
 
-class Price(Stream):
+class Price():
     """
     A Price Stream, controls data handling for various types of input data from bar_type
     
@@ -50,7 +50,6 @@ class Price(Stream):
 
     """
     def __init__(self, bar_type, cache = None, contract = None, multiplier = 1):
-        super().__init__(cache)
         self.contract = contract
         self.bar_type = bar_type
         self.multiplier = multiplier

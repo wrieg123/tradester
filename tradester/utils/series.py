@@ -21,9 +21,28 @@ def vectorized_ema(data, window):
     mult = data*pw0*scale_arr
     cumsums = mult.cumsum()
     out = offset + cumsums*scale_arr[::-1]
+
     return out
 
+@jit(nopython = True, nogil = True)
+def get_sum(s, p):
+    return s[-p:].sum()
 
+@jit(nopython = True, nogil = True)
+def get_mean(s, p):
+    return s[-p:].mean()
+
+@jit(nopython = True, nogil = True)
+def get_std(s, p):
+    return s[-p:].std()
+
+@jit(nopython = True, nogil = True)
+def get_min(s, p):
+    return s[-p:].min()
+
+@jit(nopython = True, nogil = True)
+def get_max(s, p):
+    return s[-p:].max()
 
 def stateful_performance(performance_ts, states, normalize = False, log_normal = False):
     state_performance = {}

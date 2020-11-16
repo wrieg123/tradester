@@ -45,7 +45,7 @@ class FuturesUniverse(Universe):
 
     """
 
-    def __init__(self, name, products, continuation_periods, start_date = None, end_date = None, bar = 'daily', exchange = 'CME', include_continuations = False, include_synthetics = False, roll_on = 'last_trade_date'):
+    def __init__(self, name, products, continuation_periods, start_date = None, end_date = None, bar = 'daily', exchange = 'CME', include_continuations = False, include_product = False, roll_on = 'last_trade_date'):
         super().__init__('FUT', name, start_date, end_date)
         self.products = products
         self.continuation_periods = continuation_periods
@@ -54,7 +54,7 @@ class FuturesUniverse(Universe):
         self.bar = bar
         self.exchange = exchange
         self.include_continuations = include_continuations
-        self.include_synthetics = include_synthetics
+        self.include_product = include_product
         self.roll_on = roll_on
 
         self.products_meta = self.__get_products_meta()
@@ -91,19 +91,7 @@ class FuturesUniverse(Universe):
     def __get_continuations_meta(self):
         """returns the meta information for continuation contracts"""
 
-        if self.include_continuations or self.include_synthetics:
-            if self.include_continuations and self.include_synthetics:
-                query = f"select * from futures where product in ({str(self.products).strip('[]')}) and is_continuation = True order by soft_expiry asc"
-            else:
-                query = f"select * from futures where product in ({str(self.products).strip('[]')}) and is_continuation = True and is_synthetic = {self.include_synthetics} order by soft_expiry asc"
-            df = CustomFeed(query).data.set_index('contract')
-
-            if df.dtypes['is_active'] != bool:
-                df['is_active'] = df['is_active'].apply(lambda x: x == 1)
-                df['is_continuation'] = df['is_continuation'].apply(lambda x: x == 1)
-                df['is_synthetic'] = df['is_synthetic'].apply(lambda x: x == 1)
-        else:
-            return {}
+        return {}
     
     def __create_calendar(self):
         """creates a expiration calendar that rolls contract on the self.roll_on field"""
@@ -143,9 +131,9 @@ class FuturesUniverse(Universe):
                     return i
         elif actor == 'inactive':
             for n, i in enumerate(indexes):
-                if i > date:
+                if i >= date:
                     if n >= 1:
-                        return indexes[:-(n-1)]
+                        return indexes[:(n-1)]
                     else:
                         return []
 
@@ -162,22 +150,31 @@ class FuturesUniverse(Universe):
         inactive_products = {}
         active_list = []
         inactive_list = [] 
+        tradeable = [asset.identifier for asset in list(self.assets.values()) if asset.tradeable]
         for product in self.products:
             active_date = self.find_date(self.calendar_indexes[product], self.manager.now)
             active_products[product] = self.calendars[product][active_date]
             
             i_list = []
             for index in self.find_date(self.calendar_indexes[product], self.manager.now, actor = 'inactive'):
-                i_list.extend(self.calendars[product][index].values())
+                for a in list(self.calendars[product][index].values()):
+                    if not self.assets[a].tradeable and a not in list(active_products[product].values()):
+                        i_list.append(a)
             
-            i_list = list(set(i_list).symmetric_difference(set(active_products[product])))
+            
+            i_list = list(set(i_list))
+            #i_list = list(set(i_list).symmetric_difference(set(list(active_products[product].values()))))
             inactive_products[product] = i_list
             inactive_list.extend(i_list)
             active_list.extend(list(active_products[product].values()))
 
-        tradeable = [asset.identifier for asset in list(self.assets.values()) if asset.tradeable]
-         
-        self.tradeable = list(set(tradeable + active_list))
+        if self.include_continuations:
+            for product in self.products:
+                active_list.extend(list(active_products[product].keys()))
+        if self.include_product:
+            active_list.extend(self.products)
+
+        self.tradeable = tradeable
         self.active_products = active_products
         self.inactive_products = inactive_products
         self.active_list = active_list
