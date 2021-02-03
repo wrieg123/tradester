@@ -300,6 +300,10 @@ class OMS():
                     hl = (high + low) / 2
                     lc = (low + close) / 2
                     fill_price = (oh+hl+lc)/3
+            elif order_type == 'MM':
+                bid = bands['BID']
+                ask = bands['ASK']
+                pass
 
             if order_fill:
                 self._fill_order(order, fill_price, filled_units, fee * filled_units)

@@ -4,7 +4,6 @@ import numpy as np
 
 
 
-
 class Signal():
 
     def __init__(self, indicator, identifiers : tuple, grouping = None, name = None):
@@ -37,7 +36,7 @@ class SignalGroup():
         #return list(set([item for x in assets for item in self.tuple_map[x] if self.tuple_map.get(x) is not None]))
         return list(set(new))
         
-    def get_indicators(self, assets = None, old = False):
+    def get_indicators(self, assets = None):
         temp_dict = {}
         for k in self._get_signals(assets):
             for s in self.group[k]:
@@ -63,48 +62,49 @@ class SignalGroup():
         return {k : np.column_stack(tuple(v)) for k, v in list(temp_dict.items())}
 
    
-    def get_indicator_tree(self, assets = None, old = False):
+    def get_indicator_tree(self, assets = None):
         temp_dict = {}
-        #for k in self._get_signals(assets, 'get', old = old):
+        asset_map_keys = list(self.asset_map.keys())
         for a in assets:
-            for s in self.asset_map[a]:
-            #for k in self.tuple_map[a]:
-            #    for s in self.group[k]:
-                c = a
-                g = s.grouping if s.grouping is not None else 'None'
-                name = s.indicator_name
-                ts = s.indicator.ts
+            if a in asset_map_keys:
+                for s in self.asset_map[a]:
+                #for k in self.tuple_map[a]:
+                #    for s in self.group[k]:
+                    c = a
+                    g = s.grouping if s.grouping is not None else 'None'
+                    name = s.indicator_name
+                    ts = s.indicator.ts
 
-                #for c in s.identifiers:
-                if c not in list(temp_dict.keys()):
-                    temp_dict[c] = {}
-                if g not in list(temp_dict[c].keys()):
-                    temp_dict[c][g] = {}
+                    #for c in s.identifiers:
+                    if c not in list(temp_dict.keys()):
+                        temp_dict[c] = {}
+                    if g not in list(temp_dict[c].keys()):
+                        temp_dict[c][g] = {}
 
-                if isinstance(ts, list):
-                    temp_dict[c][g][name] = np.column_stack(tuple(ts))
-                elif isinstance(ts, dict):
-                    temp_dict[c][g][name] = np.column_stack(tuple(ts.values()))
-                else:
-                    temp_dict[c][g][name] = np.column_stack(tuple(ts))
-                            #temp_dict[c][g][name] = np.column_stack([ts])
-                        #if name not in temp_dict[c][g].keys():
-                        #if isinstance(ts, list):
-                        #    temp_dict[c][g][name] = np.column_stack([t for t in ts])
-                        #elif isinstance(ts, dict):
-                        #    temp_dict[c][g][name] = np.column_stack([t for t in list(ts.values())])
-                        #else:
-                        #    temp_dict[c][g][name] = np.column_stack([ts])
-                        #else:
-                        #    if isinstance(ts, list):
-                        #        temp = np.column_stack([t for t in ts])
-                        #    elif isinstance(ts, dict):
-                        #        temp = np.column_stack([t for t in list(ts.values())])
-                        #    else:
-                        #        temp = np.column_stack([ts])
-                        #    #temp_dict[c][g][name] = np.concatentate([temp, temp_dict[c][g][name]], axis = 1)
+                    if isinstance(ts, list):
+                        temp_dict[c][g][name] = np.column_stack(tuple(ts))
+                    elif isinstance(ts, dict):
+                        temp_dict[c][g][name] = np.column_stack(tuple(ts.values()))
+                    else:
+                        temp_dict[c][g][name] = np.column_stack([ts])
+                                #temp_dict[c][g][name] = np.column_stack([ts])
+                            #if name not in temp_dict[c][g].keys():
+                            #if isinstance(ts, list):
+                            #    temp_dict[c][g][name] = np.column_stack([t for t in ts])
+                            #elif isinstance(ts, dict):
+                            #    temp_dict[c][g][name] = np.column_stack([t for t in list(ts.values())])
+                            #else:
+                            #    temp_dict[c][g][name] = np.column_stack([ts])
+                            #else:
+                            #    if isinstance(ts, list):
+                            #        temp = np.column_stack([t for t in ts])
+                            #    elif isinstance(ts, dict):
+                            #        temp = np.column_stack([t for t in list(ts.values())])
+                            #    else:
+                            #        temp = np.column_stack([ts])
+                            #    #temp_dict[c][g][name] = np.concatentate([temp, temp_dict[c][g][name]], axis = 1)
 
-        return temp_dict
+            return temp_dict
 
     def _add(self, signal : Signal):
         if not signal.identifiers in self.group.keys():
