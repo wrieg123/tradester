@@ -78,7 +78,7 @@ class FuturesUniverse(Universe):
     def __get_futures_meta(self):
         """returns futures meta information"""
 
-        query = f"select * from futures where product in ({str(self.products).strip('[]')}) and is_continuation = False and is_synthetic = False and daily_end_date is not null;"
+        query = f"select * from futures where product in ({str(self.products).strip('[]')}) and is_continuation = False and is_synthetic = False and daily_end_date is not null order by soft_expiry;"
         df = CustomFeed(query).data.set_index('contract')
 
         if df.dtypes['is_active'] != bool:
@@ -160,7 +160,6 @@ class FuturesUniverse(Universe):
                 for a in list(self.calendars[product][index].values()):
                     if not self.assets[a].tradeable and a not in list(active_products[product].values()):
                         i_list.append(a)
-            
             
             i_list = list(set(i_list))
             #i_list = list(set(i_list).symmetric_difference(set(list(active_products[product].values()))))
