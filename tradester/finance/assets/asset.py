@@ -34,7 +34,7 @@ class Asset():
 
     @property
     def tradeable(self):
-        return self.start_date <= self.manager.now and self.manager.now <= self.end_date
+        return self.start_date <= self.manager.now and self.manager.now < self.end_date
 
     def set_manager(self, manager):
         self.manager = manager

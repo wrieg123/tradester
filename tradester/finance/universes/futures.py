@@ -1,5 +1,6 @@
 from tradester.feeds.static import CustomFeed
 from tradester.finance.assets import Future
+from pandas.tseries.offsets import BDay
 
 from .universe import Universe
 
@@ -45,7 +46,7 @@ class FuturesUniverse(Universe):
 
     """
 
-    def __init__(self, name, products, continuation_periods, start_date = None, end_date = None, bar = 'daily', exchange = 'CME', include_continuations = False, include_product = False, roll_on = 'last_trade_date'):
+    def __init__(self, name, products, continuation_periods, start_date = None, end_date = None, bar = 'daily', exchange = 'CME', include_continuations = False, include_product = False, roll_on = 'last_trade_date', roll_lag = None):
         super().__init__('FUT', name, start_date, end_date)
         self.products = products
         self.continuation_periods = continuation_periods
@@ -56,6 +57,7 @@ class FuturesUniverse(Universe):
         self.include_continuations = include_continuations
         self.include_product = include_product
         self.roll_on = roll_on
+        self.roll_lag = roll_lag
 
         self.products_meta = self.__get_products_meta()
         self.futures_meta = self.__get_futures_meta()
@@ -99,6 +101,10 @@ class FuturesUniverse(Universe):
         df = pd.DataFrame(self.futures_meta).T
         df.index.name = 'contract'
         df.reset_index(inplace = True)
+
+        if self.roll_lag is not None:
+            df[self.roll_on] = df[self.roll_on].apply(lambda x: pd.to_datetime(x) - BDay(self.roll_lag))
+
         calendars = {}
         indexes = {}
 
@@ -122,9 +128,9 @@ class FuturesUniverse(Universe):
             index.sort()
             indexes[product] = index
         return calendars, indexes
-                    
+
+
     def find_date(self, indexes, date, actor = 'active'):
-        
         if actor == 'active':
             for i in indexes:
                 if i > date:
