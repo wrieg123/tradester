@@ -68,8 +68,6 @@ class SignalGroup():
         for a in assets:
             if a in asset_map_keys:
                 for s in self.asset_map[a]:
-                #for k in self.tuple_map[a]:
-                #    for s in self.group[k]:
                     c = a
                     g = s.grouping if s.grouping is not None else 'None'
                     name = s.indicator_name
@@ -87,24 +85,8 @@ class SignalGroup():
                         temp_dict[c][g][name] = np.column_stack(tuple(ts.values()))
                     else:
                         temp_dict[c][g][name] = np.column_stack([ts])
-                                #temp_dict[c][g][name] = np.column_stack([ts])
-                            #if name not in temp_dict[c][g].keys():
-                            #if isinstance(ts, list):
-                            #    temp_dict[c][g][name] = np.column_stack([t for t in ts])
-                            #elif isinstance(ts, dict):
-                            #    temp_dict[c][g][name] = np.column_stack([t for t in list(ts.values())])
-                            #else:
-                            #    temp_dict[c][g][name] = np.column_stack([ts])
-                            #else:
-                            #    if isinstance(ts, list):
-                            #        temp = np.column_stack([t for t in ts])
-                            #    elif isinstance(ts, dict):
-                            #        temp = np.column_stack([t for t in list(ts.values())])
-                            #    else:
-                            #        temp = np.column_stack([ts])
-                            #    #temp_dict[c][g][name] = np.concatentate([temp, temp_dict[c][g][name]], axis = 1)
 
-            return temp_dict
+        return temp_dict
 
     def _add(self, signal : Signal):
         if not signal.identifiers in self.group.keys():
@@ -128,28 +110,29 @@ class SignalGroup():
         indicator_block = {}
         for a in new_assets:
             block = []
-            for s in self.asset_map[a]:
-                g = s.grouping if s.grouping is not None else 'None'
-                name = s.indicator_name
-                ts = s.indicator.ts
+            if a in self.asset_map.keys():
+                for s in self.asset_map[a]:
+                    g = s.grouping if s.grouping is not None else 'None'
+                    name = s.indicator_name
+                    ts = s.indicator.ts
 
-                if a not in list(indicator_tree.keys()):
-                    indicator_tree[a] = {}
-                if g not in list(indicator_tree[a].keys()):
-                    indicator_tree[a][g] = {}
+                    if a not in list(indicator_tree.keys()):
+                        indicator_tree[a] = {}
+                    if g not in list(indicator_tree[a].keys()):
+                        indicator_tree[a][g] = {}
 
-                if isinstance(ts, list):
-                    indicator_tree[a][g][name] = np.column_stack(ts)
-                    for t in ts:
-                        block.append(t)
-                elif isinstance(ts, dict):
-                    indicator_tree[a][g][name] = np.column_stack(ts.values())
-                    for t in ts.values():
-                        block.append(t)
-                else:
-                    indicator_tree[a][g][name] = np.column_stack(ts)
-                    block.append(ts)
-            indicator_block[a] = np.column_stack(block)
+                    if isinstance(ts, list):
+                        indicator_tree[a][g][name] = np.column_stack(ts)
+                        for t in ts:
+                            block.append(t)
+                    elif isinstance(ts, dict):
+                        indicator_tree[a][g][name] = np.column_stack(ts.values())
+                        for t in ts.values():
+                            block.append(t)
+                    else:
+                        indicator_tree[a][g][name] = np.column_stack(ts)
+                        block.append(ts)
+                indicator_block[a] = np.column_stack(block)
 
         tuples = self._get_signals(new_assets)
 
@@ -157,10 +140,12 @@ class SignalGroup():
         self.inactive_indicators.update(indicator_block)
 
         for a in new_assets:
-            del self.asset_map[a]
-            del self.tuple_map[a]
+            if a in self.asset_map.keys():
+                del self.asset_map[a]
+                del self.tuple_map[a]
         for t in tuples:
-            del self.group[t]
+            if t in self.group.keys():
+                del self.group[t]
 
     def refresh(self, assets = None):
         for k in self._get_signals(assets):

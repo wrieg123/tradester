@@ -62,13 +62,26 @@ class FuturesUniverse(Universe):
         self.products_meta = self.__get_products_meta()
         self.futures_meta = self.__get_futures_meta()
         self.calendars, self.calendar_indexes = self.__create_calendar()
-        self.continuations_meta = self.__get_continuations_meta()
-        self.assets = {k : Future(k, name, bar, v) for k, v in list(self.futures_meta.items()) + list(self.continuations_meta.items())}
+        self.continuations = []
+        self.assets = {}
+        self.__create_assets(name, bar)
+
         self.tradeable = []
         self.active_list = []
         self.inactive_list = []
         self.active_products = {}
         self.inactive_products = {}
+    
+
+    def __create_assets(self, name, bar):
+        for k, v in self.futures_meta.items():
+            self.assets[k] = Future(k, name, bar, v)
+        if self.include_continuations:
+            for product in self.products:
+                for i in range(self.continuation_periods[0], self.continuation_periods[1] + 1):
+                    cont = f'{product}-{i}'
+                    self.assets[cont] = Future(cont, name, bar, {}, tradeable_override = True)
+                    self.continuations.append(cont)
 
     def __get_products_meta(self):
         """returns information for product information"""
@@ -90,11 +103,6 @@ class FuturesUniverse(Universe):
 
         return df.to_dict(orient = 'index')
    
-    def __get_continuations_meta(self):
-        """returns the meta information for continuation contracts"""
-
-        return {}
-    
     def __create_calendar(self):
         """creates a expiration calendar that rolls contract on the self.roll_on field"""
         
@@ -173,9 +181,6 @@ class FuturesUniverse(Universe):
             inactive_list.extend(i_list)
             active_list.extend(list(active_products[product].values()))
 
-        if self.include_continuations:
-            for product in self.products:
-                active_list.extend(list(active_products[product].keys()))
         if self.include_product:
             active_list.extend(self.products)
 
@@ -184,6 +189,42 @@ class FuturesUniverse(Universe):
         self.inactive_products = inactive_products
         self.active_list = active_list
         self.inactive_list = inactive_list
+
+        if self.include_continuations:
+            for product in self.products:
+                for i in range(self.continuation_periods[0], self.continuation_periods[1] + 1):
+                    cont = f'{product}-{i}'
+                    contract = active_products[product][cont]
+                    
+                    open = self.assets[contract].price_stream.open.ts
+                    high = self.assets[contract].price_stream.high.ts
+                    low = self.assets[contract].price_stream.low.ts
+                    close = self.assets[contract].price_stream.close.ts
+                    volume = self.assets[contract].price_stream.volume.ts
+                    oi = self.assets[contract].price_stream.open_interest.ts
+
+                    if len(close) >= 2:
+                        bar = {
+                                'close': close[-1] - close[-2],
+                                'open': open[-1] / close[-1],
+                                'high': high[-1] / close[-1],
+                                'low': low[-1] / close[-1],
+                                'open_interest': oi[-1] - oi[-2] if len(oi) > 1 and oi[-1] is not None else 0,
+                                }
+                        if len(oi) > 0 and oi[-1] != 0 and oi[-1] is not None:
+                            bar['volume'] = volume[-1] / oi[-1]
+                        else:
+                            bar['volume'] = 0
+                    else:
+                        bar = {
+                                'close': 0,
+                                'open': 1,
+                                'high': 1,
+                                'low': 1,
+                                'volume': 0,
+                                'open_interest': 0,
+                                }
+                    self.assets[cont].price_stream.push(bar)
 
     @property
     def streams(self):

@@ -76,6 +76,10 @@ class ClockManager():
     def prev_date(self):    
         return self.previous.strftime('%Y-%m-%d')
 
+    @property
+    def peek(self):
+        return self.calendar[0]
+
     def set_bar(self,bar):
         self.bar = bar
 
@@ -231,4 +235,5 @@ class WorkerGroup():
 
     def check_all(self):
         for f in self.active:
-            self.group[f].check()
+            if f in self.group.keys():
+                self.group[f].check()

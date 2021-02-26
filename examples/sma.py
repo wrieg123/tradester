@@ -35,6 +35,7 @@ class Strat(Strategy):
         indicators = self.bottom_up.get_indicators(assets = self.active_assets)
         positions = self.portfolio.positions
         for universe in self.universes.values():
+            print(universe.active_list)
             for contract in universe.active_list:
                 asset = universe.assets[contract]
 

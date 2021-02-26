@@ -173,7 +173,7 @@ class Metrics():
     def save(self, path, sheet_name = None):
         pass
 
-    def plot(self, plot_type = '$'):
+    def plot(self, plot_type = '$', start_year = None):
         fig = plt.figure()
         gs = GridSpec(2, 2, figure =fig)
         ax1 = fig.add_subplot(gs[0,:])
@@ -202,9 +202,10 @@ class Metrics():
 
         # Graph 3: Yearly Returns by either % or $
         years = self.ts_yearly_returns_usd.columns
-
+        if start_year is not None:
+            years = [x for x in years if x >= start_year]
         norm = mpl.colors.Normalize(vmin = min(years), vmax = max(years))
-        c_m = mpl.cm.Blues
+        c_m = mpl.cm.hsv
 
         s_m = mpl.cm.ScalarMappable(cmap = c_m, norm = norm)
         s_m.set_array([])
