@@ -17,3 +17,8 @@ Please see the completed SMA Strategy example in examples/sma.py.
 ## User Control
 
 The systems is designed with bias limitations in mind. If your strategy has a buy signal Monday, it won't be executed until Tuesday. Additionally, there are rules defined in the Engine() constructor such as _adv_participation_, _adv_period_, and _adv_oi_ which limit the percentage of average daily volume (_adv_particiation_ over _adv_period_ periods) or percentage of open interest (_adv_oi_).
+
+## Sample Output
+
+The output from the example portfolio is as follows:
+![sample_output](https://user-images.githubusercontent.com/61852120/110053973-2265a400-7d0f-11eb-8cd7-2f0a3cea7fec.PNG)
