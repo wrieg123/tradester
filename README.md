@@ -1,5 +1,5 @@
 # Tradester
-Tradester is a python-based backtesting framework to test trading strategies using futures and equities. The current implementation is meant to interface with the data infrastructure I currently have set up.
+Tradester is a python-based backtesting framework to test trading strategies using futures and equities. The current implementation is meant to interface with the data infrastructure I currently have set up that is available in the dma/ directory. Additionally, it leverages cython and python primitives to improve performance and memory management. A full calendar of Brent Futures can be tested in ~6 seconds (sans time to load data into memory).
 
 
 ## Setup
