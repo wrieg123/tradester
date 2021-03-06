@@ -173,7 +173,7 @@ class Engine():
                 self.oms.process()
                 self.portfolio.reconcile()
 
-                self.strategy.bottom_up.set_inactive(inactive_assets)
+                self.strategy.indicators.set_inactive(inactive_assets)
                 self.strategy.refresh(active_assets)
 
 

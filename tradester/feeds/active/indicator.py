@@ -4,18 +4,28 @@ from .stream import Stream
 
 class Indicator():
     
-    def __init__(self, data, attributes = ['_indicator'], override = False):
+    def __init__(self, data, normalizer = None, attributes = ['_indicator'], override = False):
         self.data = data
+        self.normalizer = normalizer
         self.attributes = attributes
         self.override = override
         self._pointer = 0
         for i in attributes:
             setattr(self, i, Stream(None))
+            if normalizer is not None:
+                setattr(self, f'{i}_helper', Stream(None))
     
     @property
     def pointer(self):
         return self._pointer
     
+    @property
+    def helper_v(self):
+        if len(self.attributes) == 1:
+            return getattr(self, self.attributes[0]+'_helper').v
+        else:
+            return {a: getattr(self, a+'_helper').v for a in self.attributes}
+
     @property
     def v(self):
         if len(self.attributes) == 1:
@@ -38,19 +48,28 @@ class Indicator():
         return should_refresh
 
     def refresh(self):
-        if self.override:
+        if self.override or self.should_refresh:
             if len(self.attributes) == 1:
-                getattr(self, self.attributes[0]).push(self.calculate())
+                if self.normalizer is None:
+                    getattr(self, self.attributes[0]).push(self.calculate())
+                else:
+                    getattr(self, self.attributes[0]+'_helper').push(self.calculate())
+                    getattr(self, self.attributes[0]).push(
+                            self.normalizer.normalize(
+                                getattr(self, self.attributes[0]+'_helper').ts
+                                )
+                            )
             else:
                 for a, v in list(self.calculate().items()):
-                    getattr(self, a).push(v)
-            self._pointer += 1
-        elif self.should_refresh:
-            if len(self.attributes) == 1:
-                getattr(self, self.attributes[0]).push(self.calculate())
-            else:
-                for a, v in list(self.calculate().items()):
-                    getattr(self, a).push(v)
+                    if self.normalizer is None:
+                        getattr(self, a).push(v)
+                    else:
+                        getattr(self, a+'_helper').push(self.calculate())
+                        getattr(self, a).push(
+                                self.normalizer.normalize(
+                                    getattr(self, a+'_helper').ts
+                                    )
+                                )
             self._pointer += 1
     
     def calculate(self):

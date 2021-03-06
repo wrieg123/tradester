@@ -64,6 +64,12 @@ class Portfolio():
     @property
     def trading_log_df(self):
         return pd.DataFrame(self.trading_log)
+    
+    def get_position(self, contract):
+        if contract not in self._positions.keys():
+            return {'units': 0, 'side': 0}
+        else:
+            return self._positions[contract].info
 
     def _connect(self, manager):
         self.manager = manager

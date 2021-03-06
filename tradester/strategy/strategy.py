@@ -11,13 +11,9 @@ class Strategy():
         self.manager = None
         self.oms = None
         self.portfolio = None
-        self.top_down = {
-                'E': IndicatorGroup(group_type = 'dict'),
-                'B': IndicatorGroup(group_type = 'dict'),
-                'U': IndicatorGroup(group_type = 'dict')
-                }
+        self.top_down = { }
         self.covariance_map = { }
-        self.bottom_up = SignalGroup()
+        self.indicators = SignalGroup()
     
     @property
     def active_assets(self):
@@ -53,11 +49,11 @@ class Strategy():
             i.refresh()
         for i in list(self.covariance_map.values()):
             i.refresh()
-        self.bottom_up.refresh(assets = assets)
+        self.indicators.refresh(assets = assets)
 
-    def add(self, indicator, identifiers, base = 'bottom_up', group = None, name = None):
-        if base == 'bottom_up':
-            self.bottom_up._add(Signal(indicator, identifiers, grouping = group, name = name))
+    def add(self, indicator, identifiers, base = 'indicators', group = None, name = None):
+        if base == 'indicators':
+            self.indicators._add(Signal(indicator, identifiers, grouping = group, name = name))
         elif base == 'top_down':
             if not group in self.top_down.keys():
                 self.top_down[group] = IndicatorGroup(group_type = 'dict')

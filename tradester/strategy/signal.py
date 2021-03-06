@@ -132,12 +132,12 @@ class SignalGroup():
                     else:
                         indicator_tree[a][g][name] = np.column_stack(ts)
                         block.append(ts)
-                indicator_block[a] = np.column_stack(block)
+                #indicator_block[a] = np.column_stack(block)
 
         tuples = self._get_signals(new_assets)
 
         self.inactive_tree.update(indicator_tree)
-        self.inactive_indicators.update(indicator_block)
+        #self.inactive_indicators.update(indicator_block)
 
         for a in new_assets:
             if a in self.asset_map.keys():

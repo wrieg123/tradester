@@ -93,14 +93,13 @@ class FuturesUniverse(Universe):
     def __get_futures_meta(self):
         """returns futures meta information"""
 
-        query = f"select * from futures where product in ({str(self.products).strip('[]')}) and is_continuation = False and is_synthetic = False and daily_end_date is not null order by soft_expiry;"
+        query = f"select * from futures where product in ({str(self.products).strip('[]')}) and daily_end_date is not null order by soft_expiry;"
         df = CustomFeed(query).data.set_index('contract')
 
         if df.dtypes['is_active'] != bool:
             df['is_active'] = df['is_active'].apply(lambda x: x == 1)
             df['is_continuation'] = df['is_continuation'].apply(lambda x: x == 1)
             df['is_synthetic'] = df['is_synthetic'].apply(lambda x: x == 1)
-
         return df.to_dict(orient = 'index')
    
     def __create_calendar(self):
@@ -150,6 +149,7 @@ class FuturesUniverse(Universe):
                         return indexes[:(n-1)]
                     else:
                         return []
+            return []
 
 
     def refresh(self):
@@ -167,7 +167,10 @@ class FuturesUniverse(Universe):
         tradeable = [asset.identifier for asset in list(self.assets.values()) if asset.tradeable]
         for product in self.products:
             active_date = self.find_date(self.calendar_indexes[product], self.manager.now)
-            active_products[product] = self.calendars[product][active_date]
+            active_products[product] = self.calendars[product].get(active_date)
+            if active_products[product] is None:
+                active_products[product] = {}
+
             
             i_list = []
             for index in self.find_date(self.calendar_indexes[product], self.manager.now, actor = 'inactive'):

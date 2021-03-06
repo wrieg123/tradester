@@ -1,12 +1,13 @@
 from tradester import Engine, Indicator, FuturesUniverse, Strategy
+from tradester.utils import MeanStdNormalizer
 from time import sleep
 
 
 
 class SMA(Indicator):
 
-    def __init__(self, asset, period = 20):
-        super().__init__(asset)
+    def __init__(self, asset, period = 20, normalizer= None):
+        super().__init__(asset, normalizer = normalizer)
         self.period = period
     
     def calculate(self):
@@ -27,15 +28,14 @@ class Strat(Strategy):
     def initialize(self):
         for universe in self.universes.values():
             for asset in universe.assets.values():
-                self.add(SMA(asset), (asset.identifier, ))
+                self.add(SMA(asset, normalizer = None), (asset.identifier, ))
     
     def get_trades(self):
         trades = {}
 
-        indicators = self.bottom_up.get_indicators(assets = self.active_assets)
-        positions = self.portfolio.positions
+        indicators = self.indicators.get_indicators(assets = self.active_assets)
+
         for universe in self.universes.values():
-            print(universe.active_list)
             for contract in universe.active_list:
                 asset = universe.assets[contract]
 
@@ -44,7 +44,7 @@ class Strat(Strategy):
                 except:
                     sma = 0
 
-                current_position = positions[contract] if contract in positions.keys() else {'units': 0, 'side': 0} 
+                current_position = self.portfolio.get_position(contract)
 
                 if sma > 0:
                     trades[contract] = {
@@ -71,7 +71,7 @@ class Strat(Strategy):
 if __name__ == '__main__':
 
     universes = [
-                FuturesUniverse('Brent', ['BZ'], (1,3)),
+                FuturesUniverse('Brent', ['BB'], (1,1)),
                 ]
     
     strat = Strat(universes)
