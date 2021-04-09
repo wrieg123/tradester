@@ -91,9 +91,13 @@ class OMS():
         self.portfolio = portfolio
     
     def _remove_from_ob(self, identifier):
-        info = self.order_book[identifier].info
-        del self.order_book[identifier]
-        self.order_log.append(info)
+        if identifier in self.order_book.keys():
+            info = self.order_book[identifier].info
+            del self.order_book[identifier]
+            self.order_log.append(info)
+
+    def _log_order(self, order):
+        self.order_log.append(order.info)
     
     def _fill_order(self, order, fill_price, filled_units, fees):
         order.fill(self.manager.now, fill_price, filled_units)
@@ -133,7 +137,7 @@ class OMS():
                     )
 
 
-    def place_order(self, side, asset, units, time_in_force = None, order_type = 'MARKET', bands = {}, fok = False):
+    def place_order(self, side, asset, units, time_in_force = None, order_type = 'MARKET', bands = {}, fok = False, peg_to_open = False, temp = False):
         id_type = asset.id_type
         identifier = asset.identifier
 
@@ -142,7 +146,8 @@ class OMS():
             self._remove_from_ob(identifier)
         
         self._order_num += 1
-        self.order_book[identifier] = Order(
+        if temp:
+            return Order(
                 self.order_num, 
                 order_type,
                 asset,
@@ -152,7 +157,21 @@ class OMS():
                 asset.price_stream.close.v,
                 bands = bands,
                 fok = fok,
+                peg_to_open = peg_to_open,
             )
+        else:
+            self.order_book[identifier] = Order(
+                    self.order_num, 
+                    order_type,
+                    asset,
+                    side,
+                    units,
+                    self.manager.now, 
+                    asset.price_stream.close.v,
+                    bands = bands,
+                    fok = fok,
+                    peg_to_open = peg_to_open,
+                )
     
     def max_shares(self, asset):
         adv = int(asset.price_stream.volume.ts[-self.adv_period:].mean() * self.adv_participation)
@@ -164,151 +183,230 @@ class OMS():
         return adv
 
 
+    def _process_single_order(self, identifier, order):
+        order.bump()
+        info = order.info
+        asset = order.asset
+
+        if not asset.tradeable:
+            order.cancel(self.manager.now)
+            self._remove_from_ob(identifier)
+            return
+
+        side = info['side']
+        bands = info['bands']
+        order_type = info['order_type']
+        units = info['units']
+        id_type = info['id_type']
+        fee = self.fee_structure[id_type]
+
+        open = asset.price_stream.open.v
+        high = asset.price_stream.high.v
+        low = asset.price_stream.low.v
+        close = asset.price_stream.close.v
+
+        market_value = asset.price_stream.market_value
+        multiplier = asset.price_stream.multiplier
+
+        max_shares = self.max_shares(asset)
+
+        filled_units = min(units, max(max_shares, 2))
+        order_fill = False
+
+        if order_type == 'MARKET':
+            order_fill = True
+            fill_price = close
+        elif order_type == 'OPEN':
+            order_fill = True
+            fill_price = open
+        elif order_type == 'LIMIT':
+            limit = bands['LIMIT']
+            if side == 1:
+                if low <= limit:
+                    order_fill = True
+                    fill_price = limit
+                elif close <= limit:
+                    order_fill = True
+                    fill_price = limit
+            elif side == -1:
+                if high >= limit:
+                    order_fill = True
+                    fill_price = limit
+                elif close >= limit:
+                    order_fill = True
+                    fill_price == limit
+        elif order_type == 'LOF':
+            limit = bands['LIMIT']
+            if side == 1:
+                if low <= limit:
+                    order_fill = True
+                    fill_price = limit
+                elif close <= limit:
+                    order_fill = True
+                    fill_price = limit
+                else:
+                    order_fill = True
+                    fill_price = close
+            elif side == -1:
+                if high >= limit:
+                    order_fill = True
+                    fill_price = limit
+                elif close >= limit:
+                    order_fill = True
+                    fill_price = limit
+                else:
+                    order_fill = True
+                    fill_price = close
+        elif order_type == 'RANGE':
+            order_fill = True
+            fill_price = (high + low) / 2
+        elif order_type == 'RANGE_BOUND_C':
+            order_fill = True
+            if side == 1:
+                fill_price = (low + close) / 2
+            elif side == -1:
+                fill_price = (high + close) / 2
+        elif order_type == 'INVERSE_BOUND_C':
+            order_fill = True
+            if side == 1:
+                fill_price = (high + close) / 2
+            elif side == -1:
+                fill_price = (low + close) / 2
+        elif order_type == 'RANGE_BOUND_O':
+            order_fill = True
+            if side == 1:
+                fill_price = (low + open) / 2
+            elif side == -1:
+                fill_price = (high + open) / 2
+        elif order_type == 'INVERSE_BOUND_O':
+            order_fill = True
+            if side == 1:
+                fill_price = (high + open) / 2
+            elif side == -1:
+                fill_price = (low + open) / 2
+        elif order_type == 'BEST_FILL':
+            order_fill = True
+            if side == 1:
+                fill_price = low
+            elif side == -1:
+                fill_price = high
+        elif order_type == 'WORST_FILL':
+            order_fill = True
+            if side == 1:
+                fill_price = high 
+            elif side == -1:
+                fill_price = low 
+        elif order_type == 'TRIANGULAR_C':
+            order_fill = True
+            fill_price = (high + low + close) / 3
+        elif order_type == 'TRIANGULAR_O':
+            order_fill = True
+            fill_price = (high + low + open) / 3
+        elif order_type == 'BAR_AVG':
+            order_fill = True
+            fill_price = (high + low + open + close) / 4
+        elif order_type == 'TWAP':
+            order_fill = True
+            if close > open:
+                ol = (open + low) / 2
+                hl = (high + low) / 2
+                hc = (high + close) / 2
+                fill_price = (ol + hl + hc) / 3
+            else:
+                oh = (open + high) / 2
+                hl = (high + low) / 2
+                lc = (low + close) / 2
+                fill_price = (oh+hl+lc)/3
+
+        if order_fill:
+            self._fill_order(order, fill_price, filled_units, fee * filled_units)
+
+        if not order_fill and not order.canceled:
+            if not info['time_in_force'] is None and info['time_in_force'] >= info['days_on']:
+                order.cancel()
+                self._remove_from_ob(identifier)
+
+    def _process_complex_order(self, identifier, order):
+        order.bump()
+        info = order.info
+        asset = order.asset
+
+        if not asset.tradeable:
+            order.cancel(self.manager.now)
+            self._remove_from_ob(identifier)
+            return 
+
+        side = info['side']
+        bands = info['bands']
+        order_type = info['order_type']
+        units = info['units']
+        id_type = info['id_type']
+        fee = self.fee_structure[id_type]
+
+        open = asset.price_stream.open.v
+        high = asset.price_stream.high.v
+        low = asset.price_stream.low.v
+        close = asset.price_stream.close.v
+
+        market_value = asset.price_stream.market_value
+        multiplier = asset.price_stream.multiplier
+
+        max_shares = self.max_shares(asset)
+
+        filled_units = min(units, max(max_shares, 2))
+        order_fill = False
+
+        order.working()
+        self._remove_from_ob(identifier)
+
+        bid = bands['BID']
+        ask = bands['ASK']
+        if order.peg_to_open:
+            bid = open - bid
+            ask = open + ask
+        bid_order = self.place_order(1, asset, units, temp = True)
+        ask_order = self.place_order(-1, asset, units, order_type = 'MM', temp = True)
+
+        if isinstance(bid, str) and isinstance(ask, str):
+            if bid == 'BEST':
+                self._fill_order(bid_order, low, filled_units, fee * filled_units)
+            if ask == 'BEST':    
+                self._fill_order(ask_order, high, filled_units, fee * filled_units)
+            if bid == 'OPEN':
+                self._fill_order(bid_order, open, filled_units, fee * filled_units)
+            if bid == 'CLOSE':
+                self._fill_order(bid_order, close, filled_units, fee * filled_units)
+            if ask == 'OPEN':
+                self._fill_order(ask_order, open, filled_units, fee * filled_units)
+            if ask == 'CLOSE':
+                self._fill_order(ask_order, close, filled_units, fee * filled_units)
+            self._log_order(bid_order)
+            self._log_order(ask_order)
+
+        else:
+            take_trade = False
+            if low <= bid or high >= ask:
+                take_trade = True
+            if take_trade:
+                if low < bid:
+                    self._fill_order(bid_order, bid, filled_units, fee * filled_units)
+                else:
+                    self._fill_order(bid_order, close, filled_units, fee * filled_units)
+                
+                if high > ask:
+                    self._fill_order(ask_order, ask, filled_units, fee * filled_units)
+                else:
+                    self._fill_order(ask_order, close, filled_units, fee * filled_units)
+
+                self._log_order(bid_order)
+                self._log_order(ask_order)
+
+
+
     def process(self):
 
         for identifier, order in list(self.order_book.items()):
-            order.bump()
-            info = order.info
-            asset = order.asset
-
-            if not asset.tradeable:
-                order.cancel(self.manager.now)
-                self._remove_from_ob(identifier)
-                continue
-
-            side = info['side']
-            bands = info['bands']
-            order_type = info['order_type']
-            units = info['units']
-            id_type = info['id_type']
-            fee = self.fee_structure[id_type]
-
-            open = asset.price_stream.open.v
-            high = asset.price_stream.high.v
-            low = asset.price_stream.low.v
-            close = asset.price_stream.close.v
-
-            market_value = asset.price_stream.market_value
-            multiplier = asset.price_stream.multiplier
-
-            max_shares = self.max_shares(asset)
-
-            filled_units = min(units, max(max_shares, 2))
-            order_fill = False
-
-            if order_type == 'MARKET':
-                order_fill = True
-                fill_price = close
-            elif order_type == 'OPEN':
-                order_fill = True
-                fill_price = open
-            elif order_type == 'LIMIT':
-                limit = bands['LIMIT']
-                if side == 1:
-                    if low <= limit:
-                        order_fill = True
-                        fill_price = limit
-                    elif close <= limit:
-                        order_fill = True
-                        fill_price = limit
-                elif side == -1:
-                    if high >= limit:
-                        order_fill = True
-                        fill_price = limit
-                    elif close >= limit:
-                        order_fill = True
-                        fill_price == limit
-            elif order_type == 'LOF':
-                limit = bands['LIMIT']
-                if side == 1:
-                    if low <= limit:
-                        order_fill = True
-                        fill_price = limit
-                    elif close <= limit:
-                        order_fill = True
-                        fill_price = limit
-                    else:
-                        order_fill = True
-                        fill_price = close
-                elif side == -1:
-                    if high >= limit:
-                        order_fill = True
-                        fill_price = limit
-                    elif close >= limit:
-                        order_fill = True
-                        fill_price = limit
-                    else:
-                        order_fill = True
-                        fill_price = close
-            elif order_type == 'RANGE':
-                order_fill = True
-                fill_price = (high + low) / 2
-            elif order_type == 'RANGE_BOUND_C':
-                order_fill = True
-                if side == 1:
-                    fill_price = (low + close) / 2
-                elif side == -1:
-                    fill_price = (high + close) / 2
-            elif order_type == 'INVERSE_BOUND_C':
-                order_fill = True
-                if side == 1:
-                    fill_price = (high + close) / 2
-                elif side == -1:
-                    fill_price = (low + close) / 2
-            elif order_type == 'RANGE_BOUND_O':
-                order_fill = True
-                if side == 1:
-                    fill_price = (low + open) / 2
-                elif side == -1:
-                    fill_price = (high + open) / 2
-            elif order_type == 'INVERSE_BOUND_O':
-                order_fill = True
-                if side == 1:
-                    fill_price = (high + open) / 2
-                elif side == -1:
-                    fill_price = (low + open) / 2
-            elif order_type == 'BEST_FILL':
-                order_fill = True
-                if side == 1:
-                    fill_price = low
-                elif side == -1:
-                    fill_price = high
-            elif order_type == 'WORST_FILL':
-                order_fill = True
-                if side == 1:
-                    fill_price = high 
-                elif side == -1:
-                    fill_price = low 
-            elif order_type == 'TRIANGULAR_C':
-                order_fill = True
-                fill_price = (high + low + close) / 3
-            elif order_type == 'TRIANGULAR_O':
-                order_fill = True
-                fill_price = (high + low + open) / 3
-            elif order_type == 'BAR_AVG':
-                order_fill = True
-                fill_price = (high + low + open + close) / 4
-            elif order_type == 'TWAP':
-                order_fill = True
-                if close > open:
-                    ol = (open + low) / 2
-                    hl = (high + low) / 2
-                    hc = (high + close) / 2
-                    fill_price = (ol + hl + hc) / 3
-                else:
-                    oh = (open + high) / 2
-                    hl = (high + low) / 2
-                    lc = (low + close) / 2
-                    fill_price = (oh+hl+lc)/3
-            elif order_type == 'MM':
-                bid = bands['BID']
-                ask = bands['ASK']
-                pass
-
-            if order_fill:
-                self._fill_order(order, fill_price, filled_units, fee * filled_units)
-
-            if not order_fill:
-                if not info['time_in_force'] is None and info['time_in_force'] >= info['days_on']:
-                    order.cancel()
-                    self._remove_from_ob(identifier)
+            if order.side != 0:
+                self._process_single_order(identifier, order)
+            else:
+                self._process_complex_order(identifier, order)

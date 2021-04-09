@@ -50,7 +50,7 @@ class Order():
     -------
     bump()
         increments days_on
-    cancel(date : datetime)
+    c and not order.canceledancel(date : datetime)
         cancel the order
     update(date : datetime)
         updates the order, usually a new order gets placed
@@ -58,7 +58,7 @@ class Order():
         marks the order as filled (or partially filled) and sets the fill_price
     
     """
-    def __init__(self, num, order_type, asset, side, units, entry_date, entry_price, time_in_force = None, bands = {}, fok = False):
+    def __init__(self, num, order_type, asset, side, units, entry_date, entry_price, time_in_force = None, bands = {}, fok = False, peg_to_open = False):
         self.status = 'PLACED'
         self.num = num
         self.order_type = order_type
@@ -71,6 +71,7 @@ class Order():
         self.entry_price = entry_price
         self.time_in_force = time_in_force
         self.bands = bands
+        self.peg_to_open = peg_to_open
         self.fok = fok
         self.fill_price = None
         self.fill_date = None
@@ -78,6 +79,7 @@ class Order():
         self.cancel_date = None
         self.update_date = None
         self.days_on = 0
+        
     
     @property
     def info(self):
@@ -106,10 +108,17 @@ class Order():
     def bump(self):
         self.days_on += 1
     
+    @property
+    def canceled(self):
+        return self.status == 'CANCELLED'
+
     def cancel(self, date):
         self.status = 'CANCELLED'
         self.cancel_date = date
-    
+
+    def working(self):
+        self.status = 'WORKING'
+
     def update(self, date):
         self.status = 'UPDATED'
         self.update_date = date

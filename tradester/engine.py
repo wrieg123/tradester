@@ -77,6 +77,7 @@ class Engine():
             adv_oi = 0.05, 
             progress_bar = True, 
             print_trades = False, 
+            fee_structure = None,
             ):
         self.starting_cash = starting_cash
         self.start_date = start_date
@@ -93,7 +94,7 @@ class Engine():
         self.universes = {} 
         self.feed_factories = {}
         self.portfolio = Portfolio(starting_cash, print_trades = print_trades)
-        self.oms = OMS(adv_participation = adv_participation, adv_period = adv_period, adv_oi = adv_oi)
+        self.oms = OMS(adv_participation = adv_participation, adv_period = adv_period, adv_oi = adv_oi, fee_structure=fee_structure)
         self.metrics = Metrics(self.portfolio, self.oms, start_date, end_date)
         self.strategy = None
 

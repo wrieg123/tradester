@@ -33,7 +33,6 @@ class SignalGroup():
                 for item in self.tuple_map[a]:
                     new.append(item)
 
-        #return list(set([item for x in assets for item in self.tuple_map[x] if self.tuple_map.get(x) is not None]))
         return list(set(new))
         
     def get_indicators(self, assets = None):
@@ -107,9 +106,7 @@ class SignalGroup():
     def set_inactive(self, assets):
         new_assets = [a for a in assets if a not in self.inactive_tree.keys()]
         indicator_tree = {}
-        indicator_block = {}
         for a in new_assets:
-            block = []
             if a in self.asset_map.keys():
                 for s in self.asset_map[a]:
                     g = s.grouping if s.grouping is not None else 'None'
@@ -123,21 +120,14 @@ class SignalGroup():
 
                     if isinstance(ts, list):
                         indicator_tree[a][g][name] = np.column_stack(ts)
-                        for t in ts:
-                            block.append(t)
                     elif isinstance(ts, dict):
                         indicator_tree[a][g][name] = np.column_stack(ts.values())
-                        for t in ts.values():
-                            block.append(t)
                     else:
-                        indicator_tree[a][g][name] = np.column_stack(ts)
-                        block.append(ts)
-                #indicator_block[a] = np.column_stack(block)
+                        indicator_tree[a][g][name] = np.column_stack([ts])
 
         tuples = self._get_signals(new_assets)
 
         self.inactive_tree.update(indicator_tree)
-        #self.inactive_indicators.update(indicator_block)
 
         for a in new_assets:
             if a in self.asset_map.keys():

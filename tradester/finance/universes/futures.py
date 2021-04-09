@@ -205,25 +205,28 @@ class FuturesUniverse(Universe):
                     close = self.assets[contract].price_stream.close.ts
                     volume = self.assets[contract].price_stream.volume.ts
                     oi = self.assets[contract].price_stream.open_interest.ts
-
+                
+                    prev_close = self.assets[cont].price_stream.close.v
                     if len(close) >= 2:
-                        bar = {
-                                'close': close[-1] - close[-2],
-                                'open': open[-1] / close[-1],
-                                'high': high[-1] / close[-1],
-                                'low': low[-1] / close[-1],
-                                'open_interest': oi[-1] - oi[-2] if len(oi) > 1 and oi[-1] is not None else 0,
-                                }
-                        if len(oi) > 0 and oi[-1] != 0 and oi[-1] is not None:
-                            bar['volume'] = volume[-1] / oi[-1]
+                        if close[-1] is None or close[-2] is None:
+                            new_close = prev_close
                         else:
-                            bar['volume'] = 0
+                            new_close = prev_close + (close[-1] - close[-2])
+
+                        bar = {
+                                'close': new_close,
+                                'open': open[-1] / close[-1] * new_close,
+                                'high': high[-1] / close[-1] * new_close,
+                                'low': low[-1] / close[-1] * new_close,
+                                'open_interest': oi[-1],
+                                'volume': volume[-1] / max(oi[-1], 1),
+                                }
                     else:
                         bar = {
                                 'close': 0,
-                                'open': 1,
-                                'high': 1,
-                                'low': 1,
+                                'open': 0,
+                                'high': 0,
+                                'low': 0,
                                 'volume': 0,
                                 'open_interest': 0,
                                 }

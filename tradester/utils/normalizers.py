@@ -15,6 +15,7 @@ class MeanStdNormalizer(Normalizer):
         super().__init__(roll_period, min_period)
 
     def normalize(self, x):
+
         if self.min_period is not None:
             if len(x) < self.min_period:
                 return 0
@@ -23,9 +24,15 @@ class MeanStdNormalizer(Normalizer):
         if self.roll_period is not None:
             p = self.roll_period
             x = x[-p:]
-            
+
+        if np.isclose(np.sum(x),0):
+            return 0
+
         mu = get_mean(x, p)
         std = get_std(x, p)
+
+        if np.isclose(std, 0):
+            return 0
 
         return (x[-1] - mu) / std
 
