@@ -27,5 +27,5 @@ The systems is designed with bias limitations in mind. If your strategy has a bu
 
 ## Sample Output
 
-The output from the example portfolio (sma.py) is as follows:
+The output from the example portfolio (sma.py) is as follows (meant to show example of fill mechanic; fairly unrealistic returns):
 ![sample_output](https://user-images.githubusercontent.com/61852120/110053973-2265a400-7d0f-11eb-8cd7-2f0a3cea7fec.PNG)
